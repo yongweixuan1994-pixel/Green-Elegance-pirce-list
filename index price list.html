@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FreshBoard — Vegetable Price Management</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.30.0/tabler-icons.min.css"/>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<style>
+:root{
+  --bg:#0f1117;--bg2:#161b27;--bg3:#1e2537;--bg4:#252d40;
+  --border:#2a3350;--border2:#3a4560;
+  --text:#e8edf5;--text2:#8b9bc0;--text3:#5a6a8a;
+  --green:#22c55e;--green-bg:rgba(34,197,94,.12);--green-border:rgba(34,197,94,.25);
+  --red:#ef4444;--red-bg:rgba(239,68,68,.12);--red-border:rgba(239,68,68,.25);
+  --blue:#3b82f6;--blue-bg:rgba(59,130,246,.12);--blue-border:rgba(59,130,246,.25);
+  --yellow:#f59e0b;--yellow-bg:rgba(245,158,11,.12);--yellow-border:rgba(245,158,11,.25);
+  --purple:#a855f7;--purple-bg:rgba(168,85,247,.12);--purple-border:rgba(168,85,247,.25);
+  --radius:8px;--radius-lg:12px;
+  --mono:'Fira Code',ui-monospace,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:210px;min-width:210px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:transform .25s}
+.logo{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+.logo-title{font-size:16px;font-weight:600;letter-spacing:-.3px}
+.logo-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.nav-section{padding:10px 0;flex:1}
+.nav-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:10px 16px 4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 16px;cursor:pointer;font-size:13px;color:var(--text2);border:none;background:none;width:100%;text-align:left;transition:all .12s}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--bg3);color:var(--text);font-weight:500}
+.nav-item i{font-size:17px;flex-shrink:0}
+.nav-footer{padding:12px 16px;border-top:1px solid var(--border)}
+.role-badge{padding:5px 10px;border-radius:var(--radius);font-size:11px;font-weight:600;text-align:center;letter-spacing:.03em;margin-bottom:8px}
+.role-admin{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.role-staff{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.main{flex:1;overflow:auto;display:flex;flex-direction:column}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:13px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:600;flex:1}
+.topbar-date{font-size:12px;color:var(--text2)}
+.content{padding:18px 20px;flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .12s;white-space:nowrap}
+.btn:hover{background:var(--bg4);border-color:var(--text3)}
+.btn-primary{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-border)}
+.btn-primary:hover{background:rgba(59,130,246,.2)}
+.btn-success{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:var(--red-border)}
+.btn-purple{background:var(--purple-bg);color:var(--purple);border-color:var(--purple-border)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.stat-label{font-size:11px;color:var(--text2);margin-bottom:5px;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.stat-value{font-size:24px;font-weight:700;font-family:var(--mono)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.section-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+.price-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:8px}
+.price-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;transition:border-color .15s}
+.price-card:hover{border-color:var(--border2)}
+.price-card-name{font-size:13px;font-weight:600;margin-bottom:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.price-card-unit{font-size:11px;color:var(--text2);margin-bottom:8px}
+.price-card-price{font-family:var(--mono);font-size:16px;font-weight:600}
+.price-card-bag{font-size:11px;color:var(--text2);margin-top:3px;font-family:var(--mono)}
+.price-card-ws{font-size:11px;color:var(--purple);margin-top:3px;font-family:var(--mono)}
+.price-card-updated{font-size:10px;color:var(--text3);margin-top:8px}
+.badge-up{display:inline-flex;align-items:center;gap:1px;font-size:10px;font-weight:700;color:var(--red)}
+.badge-down{display:inline-flex;align-items:center;gap:1px;font-size:10px;font-weight:700;color:var(--green)}
+.recent-item{display:flex;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);gap:10px}
+.recent-item:last-child{border-bottom:none}
+.recent-name{flex:1;font-size:13px;font-weight:500}
+.recent-change{font-size:12px;font-family:var(--mono)}
+.recent-time{font-size:11px;color:var(--text3)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:600px}
+thead th{text-align:left;padding:9px 10px;font-size:11px;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+tbody td{padding:10px 10px;border-bottom:1px solid var(--border)}
+tbody tr:hover{background:var(--bg3)}
+tbody tr:last-child td{border-bottom:none}
+.input{width:100%;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit}
+.input:focus{outline:none;border-color:var(--blue)}
+.input-sm{padding:5px 8px;font-size:12px}
+.select{padding:8px 11px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit}
+.select:focus{outline:none;border-color:var(--blue)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form-group{margin-bottom:10px}
+.form-label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-weight:500}
+.modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;width:540px;max-width:100%;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:40px 20px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:14px}
+.upload-zone:hover,.upload-zone.dragging{background:var(--blue-bg);border-color:var(--blue)}
+.ocr-result{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:12px;font-family:var(--mono);white-space:pre-wrap;max-height:130px;overflow-y:auto;margin-bottom:12px;color:var(--text2)}
+.proposal-item{display:flex;align-items:center;padding:9px 12px;border-radius:var(--radius);margin-bottom:6px;background:var(--bg3);border:1px solid var(--border);gap:10px;flex-wrap:wrap}
+.proposal-name{flex:1;font-size:13px;font-weight:500;min-width:100px}
+.proposal-from{font-size:12px;color:var(--text2);font-family:var(--mono)}
+.proposal-to{font-size:12px;font-weight:600;font-family:var(--mono)}
+.proposal-to.up{color:var(--red)}
+.proposal-to.down{color:var(--green)}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.tag-blue{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.tag-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.tag-yellow{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow-border)}
+.tag-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.tag-purple{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
+.search-bar{display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.empty{text-align:center;padding:48px 20px;color:var(--text2);font-size:13px}
+.mono{font-family:var(--mono)}
+/* Export page */
+.export-preview{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;font-family:var(--mono);font-size:13px;white-space:pre-wrap;line-height:1.8;max-height:460px;overflow-y:auto;color:var(--text)}
+.export-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.copy-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:10px 20px;border-radius:var(--radius);font-size:13px;font-weight:600;z-index:999;pointer-events:none}
+/* Login */
+.login-wrap{display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg);padding:20px}
+.login-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;width:340px;max-width:100%}
+.login-title{font-size:22px;font-weight:700;margin-bottom:4px;letter-spacing:-.4px}
+.login-sub{font-size:13px;color:var(--text2);margin-bottom:24px}
+.pin-dots{display:flex;gap:10px;justify-content:center;margin:16px 0 6px}
+.pin-dot{width:13px;height:13px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);transition:all .15s}
+.pin-dot.filled{background:var(--blue);border-color:var(--blue)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.pin-key{padding:15px;text-align:center;font-size:18px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;background:var(--bg3);color:var(--text);transition:all .1s;font-family:var(--mono)}
+.pin-key:hover{background:var(--bg4)}
+.pin-error{font-size:12px;color:var(--red);text-align:center;margin-top:8px;min-height:18px}
+.api-setup{background:var(--yellow-bg);border:1px solid var(--yellow-border);border-radius:var(--radius);padding:12px;margin-bottom:12px;font-size:12px;color:var(--yellow)}
+@media(max-width:640px){
+  .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:100;transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{width:100%}
+  .grid-2{grid-template-columns:1fr}
+  .form-row{grid-template-columns:1fr}
+  .price-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .mobile-menu{display:flex!important}
+}
+.mobile-menu{display:none;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg3);cursor:pointer;color:var(--text);flex-shrink:0}
+.mobile-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:99}
+.mobile-overlay.open{display:block}
+tbody tr:hover .edit-hint{opacity:1!important}
+tbody td[title="Click to edit"]:hover{background:var(--bg4)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const{useState,useEffect,useRef}=React;
+
+const ADMIN_PIN='1234';
+const STAFF_PIN='0000';
+const API_KEY_STORAGE='fb_api_key';
+const MODEL='claude-sonnet-4-6';
+
+const INITIAL_PRODUCTS=[
+  {id:1,name:'Sawi',supplierNames:['Sawi Hijau','Sawi'],unit:'Bag',qty:4,qtyUnit:'KG',costPerUnit:16,markup:30,actualPrice:5.50,wholesalePrice:20.00,lastUpdated:'2025-06-10T08:30:00',prevPrice:5.00,change:'up'},
+  {id:2,name:'Beijing Cabbage',supplierNames:['Chinese Cabbage','Beijing Cabbage'],unit:'Carton',qty:10,qtyUnit:'KG',costPerUnit:40,markup:30,actualPrice:5.20,wholesalePrice:48.00,lastUpdated:'2025-06-10T09:00:00',prevPrice:5.50,change:'down'},
+  {id:3,name:'Timun',supplierNames:['Timun','Cucumber'],unit:'Bag',qty:7,qtyUnit:'KG',costPerUnit:21,markup:30,actualPrice:3.80,wholesalePrice:24.00,lastUpdated:'2025-06-10T07:45:00',prevPrice:3.80,change:'none'},
+  {id:4,name:'Lada Vietnam',supplierNames:['Chili Api Merah','Lada Merah Vietnam'],unit:'Bag',qty:5,qtyUnit:'KG',costPerUnit:55,markup:30,actualPrice:15.00,wholesalePrice:68.00,lastUpdated:'2025-06-09T14:00:00',prevPrice:13.00,change:'up'},
+  {id:5,name:'Green Coral',supplierNames:['Daun Salat','Green Coral Lettuce'],unit:'Bag',qty:3,qtyUnit:'KG',costPerUnit:18,markup:30,actualPrice:7.80,wholesalePrice:21.00,lastUpdated:'2025-06-09T11:00:00',prevPrice:7.80,change:'none'},
+  {id:6,name:'Brokoli',supplierNames:['Brokoli','Broccoli'],unit:'Carton',qty:8,qtyUnit:'KG',costPerUnit:48,markup:30,actualPrice:7.50,wholesalePrice:56.00,lastUpdated:'2025-06-08T09:00:00',prevPrice:8.00,change:'down'},
+  {id:7,name:'Tomato',supplierNames:['Tomato','Tomato Tempatan'],unit:'Bag',qty:5,qtyUnit:'KG',costPerUnit:25,markup:30,actualPrice:6.50,wholesalePrice:30.00,lastUpdated:'2025-06-10T08:00:00',prevPrice:6.00,change:'up'},
+  {id:8,name:'Bayam',supplierNames:['Bayam Merah','Bayam Hijau','Bayam'],unit:'Bag',qty:4,qtyUnit:'KG',costPerUnit:14,markup:30,actualPrice:4.50,wholesalePrice:16.00,lastUpdated:'2025-06-09T16:00:00',prevPrice:4.50,change:'none'},
+  {id:9,name:'Kobis',supplierNames:['Kobis','Cabbage'],unit:'Bag',qty:6,qtyUnit:'KG',costPerUnit:18,markup:30,actualPrice:4.00,wholesalePrice:22.00,lastUpdated:'2025-06-08T10:00:00',prevPrice:4.00,change:'none'},
+  {id:10,name:'Carrot',supplierNames:['Lobak Merah','Carrot'],unit:'Bag',qty:5,qtyUnit:'KG',costPerUnit:20,markup:30,actualPrice:5.20,wholesalePrice:24.00,lastUpdated:'2025-06-10T07:30:00',prevPrice:4.80,change:'up'},
+  {id:11,name:'Kangkung',supplierNames:['Kangkung','Water Spinach'],unit:'Bag',qty:5,qtyUnit:'KG',costPerUnit:15,markup:30,actualPrice:3.90,wholesalePrice:18.00,lastUpdated:'2025-06-09T08:00:00',prevPrice:3.90,change:'none'},
+  {id:12,name:'Bendi',supplierNames:['Bendi','Okra','Lady Finger'],unit:'Bag',qty:5,qtyUnit:'KG',costPerUnit:22,markup:30,actualPrice:5.70,wholesalePrice:26.00,lastUpdated:'2025-06-08T11:00:00',prevPrice:5.70,change:'none'},
+];
+const INITIAL_ALIASES=[
+  {id:1,supplierName:'Chili Api Merah',internalName:'Lada Vietnam'},
+  {id:2,supplierName:'Daun Salat',internalName:'Green Coral'},
+  {id:3,supplierName:'Chinese Cabbage',internalName:'Beijing Cabbage'},
+  {id:4,supplierName:'Lobak Merah',internalName:'Carrot'},
+  {id:5,supplierName:'Bayam Merah',internalName:'Bayam'},
+  {id:6,supplierName:'Water Spinach',internalName:'Kangkung'},
+  {id:7,supplierName:'Lady Finger',internalName:'Bendi'},
+];
+
+const calcCostKg=(cost,qty)=>qty>0?cost/qty:0;
+const calcSugg=(costKg,mk)=>costKg*(1+mk/100);
+const fmtRM=v=>'RM '+parseFloat(v||0).toFixed(2);
+const fmtN=v=>parseFloat(v||0).toFixed(2);
+const fmtTime=iso=>{
+  if(!iso)return'–';
+  const d=new Date(iso),now=new Date(),diff=Math.floor((now-d)/60000);
+  if(diff<1)return'just now';
+  if(diff<60)return diff+'m ago';
+  const h=Math.floor(diff/60);
+  if(h<24)return h+'h ago';
+  return d.toLocaleDateString('en-MY',{day:'numeric',month:'short'});
+};
+const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
+const load=(k,def)=>{try{const s=localStorage.getItem(k);return s?JSON.parse(s):def;}catch{return def;}};
+
+function ChangeIcon({change}){
+  if(change==='up')return React.createElement('span',{className:'badge-up'},React.createElement('i',{className:'ti ti-arrow-up',style:{fontSize:11}}));
+  if(change==='down')return React.createElement('span',{className:'badge-down'},React.createElement('i',{className:'ti ti-arrow-down',style:{fontSize:11}}));
+  return null;
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────
+function LoginScreen({onLogin}){
+  const[pin,setPin]=useState('');
+  const[sel,setSel]=useState(null);
+  const[err,setErr]=useState('');
+  const ROLES=[{id:'admin',label:'Admin',pin:ADMIN_PIN},{id:'staff',label:'Staff',pin:STAFF_PIN}];
+  function press(k){
+    if(pin.length>=4)return;
+    const np=pin+k;setPin(np);setErr('');
+    if(np.length===4){
+      if(!sel){setErr('Select a role first');setPin('');return;}
+      const r=ROLES.find(r=>r.id===sel);
+      if(np===r.pin)onLogin(sel);
+      else{setErr('Wrong PIN — try again');setTimeout(()=>setPin(''),500);}
+    }
+  }
+  return React.createElement('div',{className:'login-wrap'},
+    React.createElement('div',{className:'login-card'},
+      React.createElement('div',{className:'login-title'},'🥦 FreshBoard'),
+      React.createElement('div',{className:'login-sub'},'Vegetable Price Management System'),
+      React.createElement('div',{style:{display:'flex',gap:8,marginBottom:16}},
+        ROLES.map(r=>React.createElement('button',{key:r.id,className:'btn',style:{flex:1,justifyContent:'center',...(sel===r.id?{background:'var(--blue-bg)',color:'var(--blue)',borderColor:'var(--blue-border)'}:{})},onClick:()=>{setSel(r.id);setPin('');setErr('');}},r.label))
+      ),
+      React.createElement('div',{className:'pin-dots'},
+        [0,1,2,3].map(i=>React.createElement('div',{key:i,className:'pin-dot'+(i<pin.length?' filled':'')}))
+      ),
+      React.createElement('div',{className:'pin-error'},err||(sel?'Demo PIN: '+(sel==='admin'?ADMIN_PIN:STAFF_PIN):'Choose Admin or Staff')),
+      React.createElement('div',{className:'pin-pad'},
+        ['1','2','3','4','5','6','7','8','9','','0','⌫'].map((k,i)=>
+          React.createElement('button',{key:i,className:'pin-key',style:{visibility:k===''?'hidden':'visible'},onClick:()=>k==='⌫'?setPin(p=>p.slice(0,-1)):press(k)},k)
+        )
+      )
+    )
+  );
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────
+function Dashboard({products}){
+  const todayStr=new Date().toDateString();
+  const todayUp=products.filter(p=>new Date(p.lastUpdated).toDateString()===todayStr);
+  const ups=products.filter(p=>p.change==='up').length;
+  const dns=products.filter(p=>p.change==='down').length;
+  const sorted=[...products].sort((a,b)=>new Date(b.lastUpdated)-new Date(a.lastUpdated));
+  return React.createElement('div',null,
+    React.createElement('div',{className:'stats-row'},
+      React.createElement('div',{className:'stat-card'},React.createElement('div',{className:'stat-label'},'Total SKUs'),React.createElement('div',{className:'stat-value'},products.length)),
+      React.createElement('div',{className:'stat-card'},React.createElement('div',{className:'stat-label'},'Today Updated'),React.createElement('div',{className:'stat-value'},todayUp.length)),
+      React.createElement('div',{className:'stat-card'},React.createElement('div',{className:'stat-label'},'Price Up'),React.createElement('div',{className:'stat-value',style:{color:'var(--red)'}},ups)),
+      React.createElement('div',{className:'stat-card'},React.createElement('div',{className:'stat-label'},'Price Down'),React.createElement('div',{className:'stat-value',style:{color:'var(--green)'}},dns))
+    ),
+    React.createElement('div',{className:'grid-2'},
+      React.createElement('div',{className:'card'},
+        React.createElement('div',{className:'section-title'},"Today's Changes"),
+        todayUp.length===0
+          ?React.createElement('div',{className:'empty',style:{padding:'24px 0'}},'No updates today yet')
+          :todayUp.slice(0,12).map(p=>React.createElement('div',{key:p.id,className:'recent-item'},
+            React.createElement(ChangeIcon,{change:p.change}),
+            React.createElement('div',{className:'recent-name'},p.name),
+            React.createElement('div',{className:'recent-change mono',style:{color:p.change==='up'?'var(--red)':p.change==='down'?'var(--green)':'var(--text2)'}},fmtRM(p.actualPrice)+'/kg'),
+            React.createElement('div',{className:'recent-time'},fmtTime(p.lastUpdated))
+          ))
+      ),
+      React.createElement('div',{className:'card'},
+        React.createElement('div',{className:'section-title'},'Recently Updated'),
+        sorted.slice(0,10).map(p=>React.createElement('div',{key:p.id,className:'recent-item'},
+          React.createElement(ChangeIcon,{change:p.change}),
+          React.createElement('div',{className:'recent-name'},p.name),
+          React.createElement('div',{className:'recent-change mono'},fmtRM(p.actualPrice)+'/kg'),
+          React.createElement('div',{className:'recent-time'},fmtTime(p.lastUpdated))
+        ))
+      )
+    )
+  );
+}
+
+// ── PRICE CARD (inline edit) ──────────────────────────────────
+function PriceCard({p,role,onSave}){
+  const[open,setOpen]=useState(false);
+  const[draft,setDraft]=useState(null);
+  const costKg=calcCostKg(p.costPerUnit,p.qty);
+  const sugg=calcSugg(costKg,p.markup);
+  function startEdit(e){e.stopPropagation();setDraft({qty:p.qty,costPerUnit:p.costPerUnit,actualPrice:p.actualPrice,wholesalePrice:p.wholesalePrice||0});setOpen(true);}
+  function cancel(){setOpen(false);setDraft(null);}
+  function save(){
+    const qty=parseFloat(draft.qty)||p.qty;
+    const cost=parseFloat(draft.costPerUnit)||p.costPerUnit;
+    const actual=parseFloat(draft.actualPrice)||p.actualPrice;
+    const ws=parseFloat(draft.wholesalePrice)||0;
+    const dir=cost!==p.costPerUnit?(cost>p.costPerUnit?'up':'down'):p.change;
+    onSave({...p,qty,costPerUnit:cost,actualPrice:actual,wholesalePrice:ws,change:dir,prevPrice:p.actualPrice,lastUpdated:new Date().toISOString()});
+    setOpen(false);setDraft(null);
+  }
+  function upd(k,v){setDraft(d=>({...d,[k]:v}));}
+  const dCostKg=draft?calcCostKg(parseFloat(draft.costPerUnit)||0,parseFloat(draft.qty)||1):costKg;
+  const dSugg=draft?calcSugg(dCostKg,p.markup):sugg;
+  const ws=p.wholesalePrice||0;
+
+  return React.createElement('div',{className:'price-card'},
+    React.createElement('div',{className:'price-card-name'},
+      p.name,React.createElement(ChangeIcon,{change:p.change}),
+      role==='admin'&&!open&&React.createElement('button',{className:'btn btn-sm',style:{marginLeft:'auto',padding:'2px 7px',fontSize:11},onClick:startEdit},React.createElement('i',{className:'ti ti-pencil'}))
+    ),
+    React.createElement('div',{className:'price-card-unit'},p.qty+' '+p.qtyUnit+' / '+p.unit),
+    !open&&React.createElement('div',null,
+      React.createElement('div',{className:'price-card-price'},fmtRM(p.actualPrice)+' /kg'),
+      React.createElement('div',{className:'price-card-bag',style:{color:'var(--text2)'}},fmtRM(p.actualPrice*p.qty)+' /'+p.unit),
+      ws>0&&React.createElement('div',{className:'price-card-ws'},React.createElement('i',{className:'ti ti-building-store',style:{fontSize:10,marginRight:3}}),'WS: '+fmtRM(ws)+' /'+p.unit),
+      role==='admin'&&React.createElement('div',{style:{fontSize:11,color:'var(--text3)',marginTop:5}},'Cost: '+fmtRM(costKg)+' · Sug: '+fmtRM(sugg)),
+      React.createElement('div',{className:'price-card-updated'},fmtTime(p.lastUpdated))
+    ),
+    open&&draft&&React.createElement('div',{style:{marginTop:8},onClick:e=>e.stopPropagation()},
+      React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:6}},
+        React.createElement('div',null,
+          React.createElement('div',{style:{fontSize:10,color:'var(--text2)',marginBottom:3}},p.qtyUnit+' Per '+p.unit),
+          React.createElement('input',{className:'input input-sm',type:'number',min:0.1,step:0.1,value:draft.qty,onChange:e=>upd('qty',e.target.value),style:{width:'100%'}})
+        ),
+        React.createElement('div',null,
+          React.createElement('div',{style:{fontSize:10,color:'var(--text2)',marginBottom:3}},'Cost /'+p.unit+' (RM)'),
+          React.createElement('input',{className:'input input-sm',type:'number',min:0,step:0.01,value:draft.costPerUnit,onChange:e=>upd('costPerUnit',e.target.value),style:{width:'100%'}})
+        )
+      ),
+      React.createElement('div',{style:{fontSize:10,color:'var(--text3)',marginBottom:6}},'Cost/kg: '+fmtRM(dCostKg)+' · Suggested: '+fmtRM(dSugg)),
+      React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:8}},
+        React.createElement('div',null,
+          React.createElement('div',{style:{fontSize:10,color:'var(--text2)',marginBottom:3}},'Retail Price /kg (RM)'),
+          React.createElement('input',{className:'input input-sm',type:'number',min:0,step:0.01,value:draft.actualPrice,onChange:e=>upd('actualPrice',e.target.value),style:{width:'100%'}})
+        ),
+        React.createElement('div',null,
+          React.createElement('div',{style:{fontSize:10,color:'var(--purple)',marginBottom:3}},'Wholesale /'+p.unit+' (RM)'),
+          React.createElement('input',{className:'input input-sm',type:'number',min:0,step:0.01,value:draft.wholesalePrice,onChange:e=>upd('wholesalePrice',e.target.value),style:{width:'100%',borderColor:'var(--purple-border)'}})
+        )
+      ),
+      React.createElement('div',{style:{display:'flex',gap:5}},
+        React.createElement('button',{className:'btn btn-primary btn-sm',style:{flex:1,justifyContent:'center'},onClick:save},React.createElement('i',{className:'ti ti-check'}),' Save'),
+        React.createElement('button',{className:'btn btn-sm',style:{flex:1,justifyContent:'center'},onClick:cancel},'Cancel')
+      )
+    )
+  );
+}
+
+// ── PRICE BOARD ───────────────────────────────────────────────
+function PriceBoard({products,role,onSave}){
+  const[q,setQ]=useState('');
+  const[f,setF]=useState('all');
+  const todayStr=new Date().toDateString();
+  const list=products.filter(p=>{
+    if(q&&!p.name.toLowerCase().includes(q.toLowerCase()))return false;
+    if(f==='up'&&p.change!=='up')return false;
+    if(f==='down'&&p.change!=='down')return false;
+    if(f==='today'&&new Date(p.lastUpdated).toDateString()!==todayStr)return false;
+    return true;
+  });
+  return React.createElement('div',null,
+    role==='admin'&&React.createElement('div',{style:{fontSize:12,color:'var(--text2)',marginBottom:10,display:'flex',alignItems:'center',gap:6}},
+      React.createElement('i',{className:'ti ti-pencil',style:{fontSize:14}}),'Tap ✏️ on any card to edit qty, cost, retail price, or wholesale price'
+    ),
+    React.createElement('div',{className:'search-bar'},
+      React.createElement('input',{className:'input',placeholder:'Search product name...',value:q,onChange:e=>setQ(e.target.value),style:{flex:1,maxWidth:260}}),
+      ['all','up','down','today'].map(v=>React.createElement('button',{key:v,className:'btn btn-sm'+(f===v?' btn-primary':''),onClick:()=>setF(v)},{all:'All',up:'↑ Up',down:'↓ Down',today:'Today'}[v]))
+    ),
+    React.createElement('div',{className:'price-grid'},
+      list.map(p=>React.createElement(PriceCard,{key:p.id,p,role,onSave}))
+    )
+  );
+}
+
+// ── PRODUCT MODAL ─────────────────────────────────────────────
+function ProductModal({product,onSave,onClose}){
+  const isNew=!product.id;
+  const[f,setF]=useState(isNew
+    ?{name:'',supplierNamesStr:'',unit:'Bag',qty:4,qtyUnit:'KG',costPerUnit:0,markup:30,actualPrice:0,wholesalePrice:0,change:'none',prevPrice:0,lastUpdated:new Date().toISOString()}
+    :{...product,supplierNamesStr:(product.supplierNames||[]).join(', ')}
+  );
+  const costKg=calcCostKg(f.costPerUnit,f.qty);
+  const sugg=calcSugg(costKg,f.markup);
+  function upd(k,v){setF(x=>({...x,[k]:v}));}
+  function save(){
+    if(!f.name.trim()){alert('Product name is required');return;}
+    const p={...f,supplierNames:f.supplierNamesStr.split(',').map(s=>s.trim()).filter(Boolean),lastUpdated:new Date().toISOString()};
+    if(!p.id)p.id=Date.now();
+    delete p.supplierNamesStr;
+    onSave(p);
+  }
+  return React.createElement('div',{className:'modal-bg',onClick:e=>{if(e.target===e.currentTarget)onClose();}},
+    React.createElement('div',{className:'modal'},
+      React.createElement('div',{className:'modal-title'},isNew?'Add New Product':'Edit Product',
+        React.createElement('button',{className:'btn btn-sm',onClick:onClose},React.createElement('i',{className:'ti ti-x'}))
+      ),
+      React.createElement('div',{className:'form-row'},
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label'},'Internal Product Name *'),
+          React.createElement('input',{className:'input',value:f.name,onChange:e=>upd('name',e.target.value),placeholder:'e.g. Sawi'})
+        ),
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label'},'Supplier Name(s) — comma separated'),
+          React.createElement('input',{className:'input',value:f.supplierNamesStr,onChange:e=>upd('supplierNamesStr',e.target.value),placeholder:'e.g. Sawi Hijau, Sawi'})
+        )
+      ),
+      React.createElement('div',{className:'form-row'},
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label'},'Unit Type'),
+          React.createElement('select',{className:'select',style:{width:'100%'},value:f.unit,onChange:e=>upd('unit',e.target.value)},
+            ['Bag','Carton','Piece'].map(u=>React.createElement('option',{key:u},u))
+          )
+        ),
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label'},'Qty Per Unit'),
+          React.createElement('div',{style:{display:'flex',gap:6}},
+            React.createElement('input',{className:'input',type:'number',min:0.1,step:0.1,value:f.qty,onChange:e=>upd('qty',parseFloat(e.target.value)||0),style:{flex:1}}),
+            React.createElement('select',{className:'select',value:f.qtyUnit,onChange:e=>upd('qtyUnit',e.target.value)},
+              ['KG','Piece'].map(u=>React.createElement('option',{key:u},u))
+            )
+          )
+        )
+      ),
+      React.createElement('div',{className:'form-row'},
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label'},'Cost Price Per '+f.unit+' (RM)'),
+          React.createElement('input',{className:'input',type:'number',min:0,step:0.01,value:f.costPerUnit,onChange:e=>upd('costPerUnit',parseFloat(e.target.value)||0)})
+        ),
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label'},'Markup %'),
+          React.createElement('input',{className:'input',type:'number',min:0,step:1,value:f.markup,onChange:e=>upd('markup',parseFloat(e.target.value)||0)})
+        )
+      ),
+      React.createElement('div',{style:{background:'var(--bg3)',border:'1px solid var(--border)',borderRadius:'var(--radius)',padding:'12px',display:'flex',gap:20,marginBottom:10,fontSize:13}},
+        React.createElement('div',null,React.createElement('span',{style:{color:'var(--text2)'}},'Cost /kg: '),React.createElement('strong',{className:'mono'},fmtRM(costKg))),
+        React.createElement('div',null,React.createElement('span',{style:{color:'var(--text2)'}},'Suggested: '),React.createElement('strong',{className:'mono'},fmtRM(sugg)+'/kg'))
+      ),
+      React.createElement('div',{className:'form-row'},
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label'},'Retail Selling Price /kg (RM)'),
+          React.createElement('input',{className:'input',type:'number',min:0,step:0.01,value:f.actualPrice,onChange:e=>upd('actualPrice',parseFloat(e.target.value)||0)})
+        ),
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label',style:{color:'var(--purple)'}},'Wholesale Price /'+f.unit+' (RM)'),
+          React.createElement('input',{className:'input',type:'number',min:0,step:0.01,value:f.wholesalePrice||0,onChange:e=>upd('wholesalePrice',parseFloat(e.target.value)||0),style:{borderColor:'var(--purple-border)'}})
+        )
+      ),
+      React.createElement('div',{className:'form-row'},
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label'},'Price Change Indicator'),
+          React.createElement('select',{className:'select',style:{width:'100%'},value:f.change,onChange:e=>upd('change',e.target.value)},
+            [{v:'none',l:'No change'},{v:'up',l:'↑ Price Up'},{v:'down',l:'↓ Price Down'}].map(o=>React.createElement('option',{key:o.v,value:o.v},o.l))
+          )
+        )
+      ),
+      React.createElement('div',{style:{display:'flex',gap:8,justifyContent:'flex-end',marginTop:4}},
+        React.createElement('button',{className:'btn',onClick:onClose},'Cancel'),
+        React.createElement('button',{className:'btn btn-primary',onClick:save},'Save Product')
+      )
+    )
+  );
+}
+
+// ── PRODUCTS PAGE ─────────────────────────────────────────────
+function ProductsPage({products,role,onSave,onDelete}){
+  const[q,setQ]=useState('');
+  const[addModal,setAddModal]=useState(false);
+
+  const list=products.filter(p=>!q||p.name.toLowerCase().includes(q.toLowerCase()));
+
+  return React.createElement('div',null,
+    React.createElement('div',{style:{display:'flex',gap:8,marginBottom:14,alignItems:'center',flexWrap:'wrap'}},
+      React.createElement('input',{className:'input',placeholder:'Search...',value:q,onChange:e=>setQ(e.target.value),style:{flex:1,maxWidth:280}}),
+      role==='admin'&&React.createElement('div',{style:{fontSize:12,color:'var(--text2)',display:'flex',alignItems:'center',gap:5}},
+        React.createElement('i',{className:'ti ti-table',style:{fontSize:14}}),'Click any cell to edit directly'
+      ),
+      role==='admin'&&React.createElement('button',{className:'btn btn-primary',onClick:()=>setAddModal(true)},React.createElement('i',{className:'ti ti-plus'}),' Add Product')
+    ),
+    React.createElement('div',{className:'card',style:{padding:0,overflow:'hidden'}},
+      React.createElement('div',{className:'table-wrap'},
+        React.createElement('table',null,
+          React.createElement('thead',null,
+            React.createElement('tr',null,
+              React.createElement('th',null,'Product'),
+              React.createElement('th',null,'Unit'),
+              React.createElement('th',null,'Qty'),
+              role==='admin'&&React.createElement('th',null,'Cost/Unit'),
+              role==='admin'&&React.createElement('th',null,'Cost/KG'),
+              role==='admin'&&React.createElement('th',null,'Markup %'),
+              role==='admin'&&React.createElement('th',null,'Suggested'),
+              React.createElement('th',null,'Retail /kg'),
+              React.createElement('th',{style:{color:'var(--purple)'}},React.createElement('i',{className:'ti ti-building-store',style:{marginRight:3}}),'WS /Unit'),
+              React.createElement('th',null,'Updated'),
+              role==='admin'&&React.createElement('th',null,'')
+            )
+          ),
+          React.createElement('tbody',null,
+            list.map(p=>React.createElement(InlineRowInner,{key:p.id,p,role,onSave,onDelete}))
+          )
+        )
+      )
+    ),
+    addModal&&React.createElement(ProductModal,{product:{},onSave:p=>{onSave(p);setAddModal(false);},onClose:()=>setAddModal(false)})
+  );
+}
+
+function InlineRowInner({p,role,onSave,onDelete}){
+  const costKg=calcCostKg(p.costPerUnit,p.qty);
+  const sugg=calcSugg(costKg,p.markup);
+  const ws=p.wholesalePrice||0;
+
+  // active editing cell: {key, val}
+  const[active,setActive]=useState(null);
+  const inputRef=useRef();
+  useEffect(()=>{if(active&&inputRef.current)inputRef.current.focus();},[active]);
+
+  function startEdit(key,val){if(role!=='admin')return;setActive({key,val:String(val)});}
+  function commit(){
+    if(!active)return;
+    const numKeys=['costPerUnit','qty','markup','actualPrice','wholesalePrice'];
+    const v=numKeys.includes(active.key)?parseFloat(active.val)||0:active.val;
+    const updated={...p,[active.key]:v,lastUpdated:new Date().toISOString()};
+    if(active.key==='costPerUnit'){
+      updated.change=v>p.costPerUnit?'up':v<p.costPerUnit?'down':p.change;
+    }
+    onSave(updated);
+    setActive(null);
+  }
+  function kd(e){if(e.key==='Enter')commit();if(e.key==='Escape')setActive(null);}
+
+  const cellStyle=(key)=>({
+    cursor:role==='admin'?'pointer':'default',
+    background:active&&active.key===key?'var(--bg4)':'',
+    transition:'background .1s'
+  });
+
+  function displayCell(key,content,extraStyle){
+    const isActive=active&&active.key===key;
+    if(isActive){
+      const isSelect=['unit','qtyUnit','change'].includes(key);
+      const opts={unit:['Bag','Carton','Piece'],qtyUnit:['KG','Piece'],change:['none','up','down']}[key];
+      if(isSelect)return React.createElement('td',{style:{padding:'4px 6px'}},
+        React.createElement('select',{ref:inputRef,className:'select',style:{padding:'3px 6px',fontSize:12,minWidth:80},value:active.val,onChange:e=>setActive(a=>({...a,val:e.target.value})),onBlur:commit,onKeyDown:kd},
+          opts.map(o=>React.createElement('option',{key:o},o))
+        )
+      );
+      return React.createElement('td',{style:{padding:'4px 6px'}},
+        React.createElement('input',{ref:inputRef,style:{padding:'3px 8px',fontSize:12,width:'100%',minWidth:72,border:'2px solid var(--blue)',borderRadius:4,background:'var(--bg)',color:'var(--text)',fontFamily:'var(--mono)'},value:active.val,onChange:e=>setActive(a=>({...a,val:e.target.value})),onBlur:commit,onKeyDown:kd,step:'0.01',type:'number'})
+      );
+    }
+    return React.createElement('td',{
+      onClick:()=>startEdit(key,p[key]),
+      style:{...cellStyle(key),...extraStyle,position:'relative'},
+      title:role==='admin'?'Click to edit':''
+    },
+      React.createElement('div',{style:{display:'flex',alignItems:'center',gap:4}},
+        content,
+        role==='admin'&&React.createElement('i',{className:'edit-hint ti ti-pencil',style:{fontSize:9,color:'var(--text3)',opacity:0}})
+      )
+    );
+  }
+
+  return React.createElement('tr',null,
+    // Product name
+    React.createElement('td',null,
+      React.createElement('div',{style:{display:'flex',alignItems:'center',gap:6}},
+        React.createElement(ChangeIcon,{change:p.change}),
+        active&&active.key==='name'
+          ?React.createElement('input',{ref:inputRef,style:{padding:'3px 8px',fontSize:13,border:'2px solid var(--blue)',borderRadius:4,background:'var(--bg)',color:'var(--text)'},value:active.val,onChange:e=>setActive(a=>({...a,val:e.target.value})),onBlur:commit,onKeyDown:kd})
+          :React.createElement('span',{onClick:()=>startEdit('name',p.name),style:{cursor:role==='admin'?'pointer':'default',fontWeight:500},title:role==='admin'?'Click to edit':''},p.name)
+      )
+    ),
+    // Unit
+    displayCell('unit',p.unit,{fontSize:13}),
+    // Qty (number only, label comes from qtyUnit stored separately)
+    active&&active.key==='qty'
+      ?React.createElement('td',{style:{padding:'4px 6px'}},
+          React.createElement('input',{ref:inputRef,style:{padding:'3px 8px',fontSize:12,width:70,border:'2px solid var(--blue)',borderRadius:4,background:'var(--bg)',color:'var(--text)',fontFamily:'var(--mono)'},value:active.val,onChange:e=>setActive(a=>({...a,val:e.target.value})),onBlur:commit,onKeyDown:kd,type:'number',step:'0.1'})
+        )
+      :React.createElement('td',{onClick:()=>startEdit('qty',p.qty),style:{...cellStyle('qty'),fontFamily:'var(--mono)',fontSize:12},title:role==='admin'?'Click to edit':''},p.qty+' '+p.qtyUnit),
+    // Cost/Unit (admin only)
+    role==='admin'&&displayCell('costPerUnit','RM '+fmtN(p.costPerUnit),{fontFamily:'var(--mono)',fontSize:12}),
+    // Cost/KG — calculated, read-only
+    role==='admin'&&React.createElement('td',{style:{fontFamily:'var(--mono)',fontSize:12,color:'var(--text2)'}},'RM '+fmtN(costKg)),
+    // Markup
+    role==='admin'&&displayCell('markup',p.markup+'%',{fontSize:12}),
+    // Suggested — calculated, read-only
+    role==='admin'&&React.createElement('td',{style:{fontFamily:'var(--mono)',fontSize:12,color:'var(--text2)'}},'RM '+fmtN(sugg)),
+    // Retail price
+    displayCell('actualPrice','RM '+fmtN(p.actualPrice)+'/kg',{fontFamily:'var(--mono)',fontWeight:600}),
+    // Wholesale price
+    displayCell('wholesalePrice',ws>0?'RM '+fmtN(ws)+'/'+p.unit:'—',{fontFamily:'var(--mono)',fontWeight:600,color:'var(--purple)'}),
+    // Updated
+    React.createElement('td',{style:{fontSize:11,color:'var(--text2)'}},fmtTime(p.lastUpdated)),
+    // Delete
+    role==='admin'&&React.createElement('td',null,
+      React.createElement('button',{className:'btn btn-sm btn-danger',onClick:()=>{if(confirm('Delete "'+p.name+'"?'))onDelete(p.id);}},React.createElement('i',{className:'ti ti-trash'}))
+    )
+  );
+}
+
+// ── ALIASES PAGE ──────────────────────────────────────────────
+function AliasesPage({aliases,products,onSave,onDelete}){
+  const[form,setForm]=useState(null);
+  function save(){
+    if(!form.supplierName.trim()||!form.internalName){alert('Both fields required');return;}
+    onSave({...form,id:form.id||Date.now()});setForm(null);
+  }
+  return React.createElement('div',null,
+    React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}},
+      React.createElement('div',{style:{fontSize:13,color:'var(--text2)'}},'Map supplier names → your internal product names for auto-matching during upload'),
+      React.createElement('button',{className:'btn btn-primary',onClick:()=>setForm({supplierName:'',internalName:''})},React.createElement('i',{className:'ti ti-plus'}),' Add Mapping')
+    ),
+    form&&React.createElement('div',{className:'card',style:{marginBottom:12}},
+      React.createElement('div',{className:'form-row'},
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label'},"Supplier's Name"),
+          React.createElement('input',{className:'input',placeholder:'e.g. Chili Api Merah',value:form.supplierName,onChange:e=>setForm(f=>({...f,supplierName:e.target.value}))})
+        ),
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label'},'Maps to Internal Name'),
+          React.createElement('select',{className:'select',style:{width:'100%'},value:form.internalName,onChange:e=>setForm(f=>({...f,internalName:e.target.value}))},
+            React.createElement('option',{value:''},'-- Select Product --'),
+            products.map(p=>React.createElement('option',{key:p.id,value:p.name},p.name))
+          )
+        )
+      ),
+      React.createElement('div',{style:{display:'flex',gap:8}},
+        React.createElement('button',{className:'btn btn-primary',onClick:save},'Save Mapping'),
+        React.createElement('button',{className:'btn',onClick:()=>setForm(null)},'Cancel')
+      )
+    ),
+    React.createElement('div',{className:'card',style:{padding:0,overflow:'hidden'}},
+      React.createElement('table',null,
+        React.createElement('thead',null,
+          React.createElement('tr',null,React.createElement('th',null,'Supplier Name'),React.createElement('th',null,'→ Internal Name'),React.createElement('th',null,''))
+        ),
+        React.createElement('tbody',null,
+          aliases.length===0
+            ?React.createElement('tr',null,React.createElement('td',{colSpan:3},React.createElement('div',{className:'empty'},'No mappings yet')))
+            :aliases.map(a=>React.createElement('tr',{key:a.id},
+              React.createElement('td',null,React.createElement('span',{className:'tag tag-yellow'},a.supplierName)),
+              React.createElement('td',null,React.createElement('span',{style:{marginRight:6}},'→'),React.createElement('span',{className:'tag tag-green'},a.internalName)),
+              React.createElement('td',null,
+                React.createElement('div',{style:{display:'flex',gap:4}},
+                  React.createElement('button',{className:'btn btn-sm',onClick:()=>setForm({...a})},React.createElement('i',{className:'ti ti-edit'})),
+                  React.createElement('button',{className:'btn btn-sm btn-danger',onClick:()=>onDelete(a.id)},React.createElement('i',{className:'ti ti-trash'}))
+                )
+              )
+            ))
+        )
+      )
+    )
+  );
+}
+
+// ── EXPORT PAGE ───────────────────────────────────────────────
+function ExportPage({products}){
+  const[mode,setMode]=useState('retail');
+  const[search,setSearch]=useState('');
+  const[selected,setSelected]=useState(()=>new Set(products.map(p=>p.id)));
+  const[header,setHeader]=useState('🥦 FreshBoard Price List');
+  const[showToast,setShowToast]=useState(false);
+  const[includeWS,setIncludeWS]=useState(true);
+  const[includeRetail,setIncludeRetail]=useState(true);
+  const[includeChange,setIncludeChange]=useState(true);
+
+  const filtered=products.filter(p=>!search||p.name.toLowerCase().includes(search.toLowerCase()));
+
+  function toggleAll(){
+    if(selected.size===products.length)setSelected(new Set());
+    else setSelected(new Set(products.map(p=>p.id)));
+  }
+  function toggle(id){
+    setSelected(s=>{const n=new Set(s);n.has(id)?n.delete(id):n.add(id);return n;});
+  }
+
+  function buildText(){
+    const date=new Date().toLocaleDateString('en-MY',{day:'numeric',month:'long',year:'numeric'});
+    const lines=[];
+    lines.push(header);
+    lines.push('📅 '+date);
+    lines.push('─'.repeat(32));
+    const chosen=products.filter(p=>selected.has(p.id));
+    chosen.forEach(p=>{
+      const changeStr=includeChange?(p.change==='up'?' ↑':p.change==='down'?' ↓':''):'';
+      const ws=p.wholesalePrice||0;
+      lines.push('');
+      lines.push('🌿 '+p.name+changeStr);
+      if(includeRetail){
+        lines.push('   Retail : RM '+fmtN(p.actualPrice)+'/kg  |  RM '+fmtN(p.actualPrice*p.qty)+'/'+p.unit);
+      }
+      if(includeWS&&ws>0){
+        lines.push('   Wholesale: RM '+fmtN(ws)+'/'+p.unit);
+      }
+    });
+    lines.push('');
+    lines.push('─'.repeat(32));
+    lines.push('*Prices subject to change daily.*');
+    return lines.join('\n');
+  }
+
+  function copyText(){
+    const t=buildText();
+    navigator.clipboard.writeText(t).then(()=>{setShowToast(true);setTimeout(()=>setShowToast(false),2000);}).catch(()=>{
+      const el=document.createElement('textarea');el.value=t;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);
+      setShowToast(true);setTimeout(()=>setShowToast(false),2000);
+    });
+  }
+
+  function openWhatsApp(){
+    const t=encodeURIComponent(buildText());
+    window.open('https://wa.me/?text='+t,'_blank');
+  }
+
+  function openEmail(){
+    const body=encodeURIComponent(buildText());
+    window.open('mailto:?subject='+encodeURIComponent(header)+'&body='+body,'_blank');
+  }
+
+  const preview=buildText();
+
+  return React.createElement('div',null,
+    showToast&&React.createElement('div',{className:'copy-toast'},React.createElement('i',{className:'ti ti-check'}),' Copied to clipboard!'),
+    React.createElement('div',{className:'grid-2',style:{marginBottom:14,marginTop:0}},
+      React.createElement('div',{className:'card'},
+        React.createElement('div',{className:'section-title'},'List Settings'),
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label'},'Header / Company Name'),
+          React.createElement('input',{className:'input',value:header,onChange:e=>setHeader(e.target.value)})
+        ),
+        React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10}},
+          React.createElement('label',{style:{display:'flex',alignItems:'center',gap:8,fontSize:13,cursor:'pointer'}},
+            React.createElement('input',{type:'checkbox',checked:includeRetail,onChange:e=>setIncludeRetail(e.target.checked),style:{width:15,height:15,accentColor:'var(--blue)'}}),
+            'Include retail price'
+          ),
+          React.createElement('label',{style:{display:'flex',alignItems:'center',gap:8,fontSize:13,cursor:'pointer'}},
+            React.createElement('input',{type:'checkbox',checked:includeWS,onChange:e=>setIncludeWS(e.target.checked),style:{width:15,height:15,accentColor:'var(--purple)'}}),
+            React.createElement('span',{style:{color:'var(--purple)'}},'Include wholesale price')
+          ),
+          React.createElement('label',{style:{display:'flex',alignItems:'center',gap:8,fontSize:13,cursor:'pointer'}},
+            React.createElement('input',{type:'checkbox',checked:includeChange,onChange:e=>setIncludeChange(e.target.checked),style:{width:15,height:15,accentColor:'var(--yellow)'}}),
+            'Show ↑↓ price change indicators'
+          )
+        )
+      ),
+      React.createElement('div',{className:'card'},
+        React.createElement('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:10}},
+          React.createElement('div',{className:'section-title',style:{marginBottom:0}},'Select Products ('+selected.size+'/'+products.length+')'),
+          React.createElement('button',{className:'btn btn-sm',onClick:toggleAll},selected.size===products.length?'Deselect All':'Select All')
+        ),
+        React.createElement('input',{className:'input',placeholder:'Search...',value:search,onChange:e=>setSearch(e.target.value),style:{marginBottom:10}}),
+        React.createElement('div',{style:{maxHeight:180,overflowY:'auto',display:'flex',flexDirection:'column',gap:4}},
+          filtered.map(p=>React.createElement('label',{key:p.id,style:{display:'flex',alignItems:'center',gap:8,fontSize:13,cursor:'pointer',padding:'4px 0'}},
+            React.createElement('input',{type:'checkbox',checked:selected.has(p.id),onChange:()=>toggle(p.id),style:{width:15,height:15,accentColor:'var(--blue)'}}),
+            React.createElement(ChangeIcon,{change:p.change}),
+            p.name,
+            React.createElement('span',{style:{marginLeft:'auto',fontSize:11,color:'var(--text2)',fontFamily:'var(--mono)'}},fmtRM(p.actualPrice)+'/kg')
+          ))
+        )
+      )
+    ),
+    React.createElement('div',{className:'export-actions'},
+      React.createElement('button',{className:'btn btn-success',onClick:copyText},React.createElement('i',{className:'ti ti-copy'}),' Copy Text'),
+      React.createElement('button',{className:'btn',style:{background:'var(--green-bg)',color:'#25D366',borderColor:'rgba(37,211,102,.3)'},onClick:openWhatsApp},React.createElement('i',{className:'ti ti-brand-whatsapp'}),' Send WhatsApp'),
+      React.createElement('button',{className:'btn btn-primary',onClick:openEmail},React.createElement('i',{className:'ti ti-mail'}),' Open Email')
+    ),
+    React.createElement('div',{className:'section-title'},'Preview'),
+    React.createElement('div',{className:'export-preview'},preview)
+  );
+}
+
+// ── UPLOAD PAGE ───────────────────────────────────────────────
+function UploadPage({products,aliases,onApprove,apiKey,onSetApiKey}){
+  const[file,setFile]=useState(null);
+  const[dragging,setDragging]=useState(false);
+  const[step,setStep]=useState('upload');
+  const[rawText,setRawText]=useState('');
+  const[proposals,setProposals]=useState([]);
+  const[checked,setChecked]=useState({});
+  const[keyInput,setKeyInput]=useState(apiKey||'');
+  const fileRef=useRef();
+
+  function resolveSupplier(sn){
+    const low=sn.toLowerCase().trim();
+    for(const a of aliases){if(a.supplierName.toLowerCase()===low)return a.internalName;}
+    for(const p of products){
+      if(p.name.toLowerCase()===low)return p.name;
+      if((p.supplierNames||[]).some(s=>s.toLowerCase()===low))return p.name;
+    }
+    return null;
+  }
+
+  async function processFile(f){
+    if(!apiKey){alert('Please save your Anthropic API key first');return;}
+    setFile(f);setStep('processing');setRawText('');setProposals([]);
+    try{
+      const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});
+      const isImg=f.type.startsWith('image/');
+      const isPdf=f.type==='application/pdf';
+      const prompt='This is a supplier vegetable price list. Extract ALL product names and prices. Output ONLY lines in this exact format — one per line:\nPRODUCT_NAME | PRICE_PER_UNIT | UNIT\nExample:\nSawi Hijau | 11.00 | bag\nChinese Cabbage | 42.00 | carton\nIf unit is unclear, default to "bag". Output nothing else.';
+      let msgs=[];
+      if(isImg)msgs=[{role:'user',content:[{type:'image',source:{type:'base64',media_type:f.type,data:b64}},{type:'text',text:prompt}]}];
+      else if(isPdf)msgs=[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:prompt}]}];
+      else throw new Error('Unsupported file type. Please use JPG, PNG, or PDF.');
+      const resp=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},
+        body:JSON.stringify({model:MODEL,max_tokens:2000,messages:msgs})
+      });
+      if(!resp.ok){const e=await resp.json();throw new Error(e.error?.message||'API error '+resp.status);}
+      const data=await resp.json();
+      const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n');
+      setRawText(text);
+      const props=[];
+      for(const line of text.split('\n')){
+        if(!line.includes('|'))continue;
+        const parts=line.split('|').map(s=>s.trim());
+        if(parts.length<2)continue;
+        const sn=parts[0].replace(/^[-*•·\d.)]\s*/,'').trim();
+        const priceStr=parts[1].replace(/[^0-9.]/g,'');
+        const newCost=parseFloat(priceStr);
+        if(!sn||isNaN(newCost)||newCost<=0)continue;
+        const internal=resolveSupplier(sn);
+        const prod=internal?products.find(p=>p.name===internal):null;
+        props.push({supplierName:sn,internalName:internal,product:prod,newCost,matched:!!prod});
+      }
+      setProposals(props);
+      const init={};
+      props.forEach((p,i)=>{if(p.matched)init[i]=true;});
+      setChecked(init);
+      setStep('review');
+    }catch(e){setRawText('Error: '+e.message);setStep('review');}
+  }
+
+  function approveSelected(){
+    const toUpdate=proposals.filter((_,i)=>checked[i]&&proposals[i].matched);
+    onApprove(toUpdate);setStep('done');
+  }
+
+  if(step==='done')return React.createElement('div',{className:'card',style:{textAlign:'center',padding:48}},
+    React.createElement('i',{className:'ti ti-circle-check',style:{fontSize:52,color:'var(--green)'}}),
+    React.createElement('div',{style:{fontSize:17,fontWeight:600,margin:'14px 0 6px'}},'Prices Updated Successfully'),
+    React.createElement('div',{style:{fontSize:13,color:'var(--text2)',marginBottom:20}},proposals.filter((_,i)=>checked[i]&&proposals[i].matched).length+' products updated'),
+    React.createElement('button',{className:'btn btn-primary',onClick:()=>{setStep('upload');setFile(null);setProposals([]);setRawText('');}},React.createElement('i',{className:'ti ti-upload'}),' Upload Another File')
+  );
+
+  if(step==='processing')return React.createElement('div',{className:'card',style:{textAlign:'center',padding:56}},
+    React.createElement('i',{className:'ti ti-scan',style:{fontSize:44,color:'var(--blue)'}}),
+    React.createElement('div',{style:{fontSize:15,fontWeight:600,margin:'14px 0 5px'}},'Reading price list with AI...'),
+    React.createElement('div',{style:{fontSize:12,color:'var(--text2)'}},file?.name)
+  );
+
+  if(step==='review')return React.createElement('div',null,
+    rawText&&React.createElement('div',{className:'card',style:{marginBottom:12}},
+      React.createElement('div',{className:'section-title'},'AI Extracted Text'),
+      React.createElement('div',{className:'ocr-result'},rawText)
+    ),
+    React.createElement('div',{className:'card'},
+      React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}},
+        React.createElement('div',{className:'section-title',style:{marginBottom:0}},'Proposed Changes ('+proposals.filter((_,i)=>checked[i]).length+' selected)'),
+        React.createElement('div',{style:{display:'flex',gap:8}},
+          React.createElement('button',{className:'btn btn-sm',onClick:()=>{setStep('upload');setFile(null);}},React.createElement('i',{className:'ti ti-arrow-left'}),' Back'),
+          React.createElement('button',{className:'btn btn-success btn-sm',onClick:approveSelected,disabled:!proposals.some((_,i)=>checked[i]&&proposals[i].matched)},React.createElement('i',{className:'ti ti-check'}),' Approve & Save')
+        )
+      ),
+      proposals.length===0
+        ?React.createElement('div',{className:'empty'},'No price data detected.')
+        :proposals.map((p,i)=>{
+          const old=p.product?p.product.costPerUnit:null;
+          const diff=old!==null?p.newCost-old:null;
+          const dir=diff===null?null:diff>0?'up':diff<0?'down':'same';
+          return React.createElement('div',{key:i,className:'proposal-item',style:{opacity:p.matched?1:.5}},
+            React.createElement('input',{type:'checkbox',checked:!!checked[i],onChange:e=>setChecked(c=>({...c,[i]:e.target.checked})),disabled:!p.matched,style:{accentColor:'var(--blue)',width:16,height:16}}),
+            React.createElement('div',{className:'proposal-name'},
+              p.internalName?React.createElement('span',{className:'tag tag-green',style:{marginRight:6}},p.internalName):React.createElement('span',{className:'tag tag-red',style:{marginRight:6}},'Unmatched'),
+              React.createElement('span',{style:{fontSize:11,color:'var(--text2)'}},p.supplierName)
+            ),
+            old!==null&&React.createElement('span',{className:'proposal-from'},fmtRM(old)),
+            old!==null&&React.createElement('span',{style:{color:'var(--text2)'}},'→'),
+            React.createElement('span',{className:'proposal-to '+(dir||'')},fmtRM(p.newCost)+'/unit'),
+            dir==='up'&&React.createElement('i',{className:'ti ti-arrow-up',style:{color:'var(--red)',fontSize:13}}),
+            dir==='down'&&React.createElement('i',{className:'ti ti-arrow-down',style:{color:'var(--green)',fontSize:13}})
+          );
+        })
+    )
+  );
+
+  return React.createElement('div',null,
+    !apiKey&&React.createElement('div',{className:'api-setup'},React.createElement('i',{className:'ti ti-key'}),' API key not set — upload needs it. Save below.'),
+    React.createElement('div',{className:'card',style:{marginBottom:12}},
+      React.createElement('div',{className:'section-title'},'Anthropic API Key'),
+      React.createElement('div',{style:{fontSize:12,color:'var(--text2)',marginBottom:8}},'Required for AI price extraction. Get from console.anthropic.com → API Keys. Saved to this browser only.'),
+      React.createElement('div',{style:{display:'flex',gap:8}},
+        React.createElement('input',{className:'input',type:'password',placeholder:'sk-ant-...',value:keyInput,onChange:e=>setKeyInput(e.target.value),style:{flex:1}}),
+        React.createElement('button',{className:'btn btn-primary',onClick:()=>onSetApiKey(keyInput.trim())},'Save Key')
+      ),
+      apiKey&&React.createElement('div',{style:{fontSize:11,color:'var(--green)',marginTop:6}},React.createElement('i',{className:'ti ti-circle-check'}),' API key saved')
+    ),
+    React.createElement('div',{className:'upload-zone '+(dragging?'dragging':''),
+      onClick:()=>fileRef.current.click(),
+      onDragOver:e=>{e.preventDefault();setDragging(true);},
+      onDragLeave:()=>setDragging(false),
+      onDrop:e=>{e.preventDefault();setDragging(false);const f=e.dataTransfer.files[0];if(f)processFile(f);}},
+      React.createElement('i',{className:'ti ti-cloud-upload',style:{fontSize:44,color:'var(--text3)',marginBottom:12,display:'block'}}),
+      React.createElement('div',{style:{fontWeight:600,marginBottom:5}},'Drop supplier price list here'),
+      React.createElement('div',{style:{fontSize:12,color:'var(--text2)'}},'Supports PDF · JPG · PNG — or tap to browse'),
+      React.createElement('input',{ref:fileRef,type:'file',accept:'.pdf,.jpg,.jpeg,.png',style:{display:'none'},onChange:e=>{if(e.target.files[0])processFile(e.target.files[0]);}})
+    ),
+    React.createElement('div',{className:'card',style:{background:'var(--bg3)'}},
+      React.createElement('div',{className:'section-title'},'How Upload Works'),
+      ['1. Upload a supplier price list (PDF, WhatsApp photo, or screenshot)','2. AI reads and extracts all product names and prices','3. System matches supplier names to your product database','4. Review proposed changes — approve only what looks correct','5. Click Approve & Save'].map((s,i)=>
+        React.createElement('div',{key:i,style:{fontSize:13,color:'var(--text2)',padding:'3px 0'}},s)
+      )
+    )
+  );
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────
+function App(){
+  const[role,setRole]=useState(null);
+  const[page,setPage]=useState('dashboard');
+  const[sidebarOpen,setSidebarOpen]=useState(false);
+  const[products,setProducts]=useState(()=>load('fb_products',INITIAL_PRODUCTS));
+  const[aliases,setAliases]=useState(()=>load('fb_aliases',INITIAL_ALIASES));
+  const[apiKey,setApiKeyState]=useState(()=>localStorage.getItem(API_KEY_STORAGE)||'');
+
+  useEffect(()=>store('fb_products',products),[products]);
+  useEffect(()=>store('fb_aliases',aliases),[aliases]);
+
+  function setApiKey(k){setApiKeyState(k);localStorage.setItem(API_KEY_STORAGE,k);}
+  function saveProduct(p){setProducts(ps=>{const i=ps.findIndex(x=>x.id===p.id);if(i>=0){const n=[...ps];n[i]=p;return n;}return[...ps,p];});}
+  function deleteProduct(id){setProducts(ps=>ps.filter(p=>p.id!==id));}
+  function saveAlias(a){setAliases(as=>{const i=as.findIndex(x=>x.id===a.id);if(i>=0){const n=[...as];n[i]=a;return n;}return[...as,a];});}
+  function deleteAlias(id){setAliases(as=>as.filter(a=>a.id!==id));}
+  function onApprove(proposals){
+    setProducts(ps=>{
+      const upd=[...ps];
+      for(const prop of proposals){
+        if(!prop.product)continue;
+        const idx=upd.findIndex(p=>p.id===prop.product.id);
+        if(idx<0)continue;
+        const old=upd[idx];
+        const costKg=calcCostKg(prop.newCost,old.qty);
+        const sugg=parseFloat(calcSugg(costKg,old.markup).toFixed(2));
+        const dir=prop.newCost>old.costPerUnit?'up':prop.newCost<old.costPerUnit?'down':'none';
+        upd[idx]={...old,costPerUnit:prop.newCost,prevPrice:old.actualPrice,actualPrice:sugg,change:dir,lastUpdated:new Date().toISOString()};
+      }
+      return upd;
+    });
+  }
+
+  if(!role)return React.createElement(LoginScreen,{onLogin:r=>{setRole(r);setPage('dashboard');}});
+
+  const today=new Date().toLocaleDateString('en-MY',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  const adminNav=[
+    {id:'dashboard',icon:'ti-layout-dashboard',label:'Dashboard'},
+    {id:'prices',icon:'ti-tag',label:'Price Board'},
+    {id:'products',icon:'ti-package',label:'Products'},
+    {id:'export',icon:'ti-send',label:'Send Price List'},
+    {id:'upload',icon:'ti-cloud-upload',label:'Upload'},
+    {id:'aliases',icon:'ti-arrows-exchange',label:'Name Mapping'},
+  ];
+  const staffNav=[
+    {id:'dashboard',icon:'ti-layout-dashboard',label:'Dashboard'},
+    {id:'prices',icon:'ti-tag',label:'Price Board'},
+    {id:'export',icon:'ti-send',label:'Send Price List'},
+  ];
+  const navItems=role==='admin'?adminNav:staffNav;
+  const titles={dashboard:'Dashboard',prices:'Price Board',products:'Product Database',export:'Send Price List',upload:'Upload Price List',aliases:'Supplier Name Mapping'};
+
+  function navTo(id){setPage(id);setSidebarOpen(false);}
+
+  return React.createElement('div',{className:'app'},
+    sidebarOpen&&React.createElement('div',{className:'mobile-overlay open',onClick:()=>setSidebarOpen(false)}),
+    React.createElement('div',{className:'sidebar'+(sidebarOpen?' open':'')},
+      React.createElement('div',{className:'logo'},
+        React.createElement('div',{className:'logo-title'},'🥦 FreshBoard'),
+        React.createElement('div',{className:'logo-sub'},'Price Management')
+      ),
+      React.createElement('div',{className:'nav-section'},
+        React.createElement('div',{className:'nav-label'},'Menu'),
+        navItems.map(n=>React.createElement('button',{key:n.id,className:'nav-item'+(page===n.id?' active':''),onClick:()=>navTo(n.id)},
+          React.createElement('i',{className:'ti '+n.icon}),n.label
+        ))
+      ),
+      React.createElement('div',{className:'nav-footer'},
+        React.createElement('div',{className:'role-badge '+(role==='admin'?'role-admin':'role-staff')},role==='admin'?'⚙ Admin':'👁 Staff'),
+        React.createElement('button',{className:'nav-item',style:{marginTop:4},onClick:()=>setRole(null)},React.createElement('i',{className:'ti ti-logout'}),'Sign Out')
+      )
+    ),
+    React.createElement('div',{className:'main'},
+      React.createElement('div',{className:'topbar'},
+        React.createElement('button',{className:'mobile-menu',onClick:()=>setSidebarOpen(o=>!o)},React.createElement('i',{className:'ti ti-menu-2'})),
+        React.createElement('div',{className:'topbar-title'},titles[page]||''),
+        React.createElement('div',{className:'topbar-date'},today)
+      ),
+      React.createElement('div',{className:'content'},
+        page==='dashboard'&&React.createElement(Dashboard,{products}),
+        page==='prices'&&React.createElement(PriceBoard,{products,role,onSave:saveProduct}),
+        page==='products'&&React.createElement(ProductsPage,{products,role,onSave:saveProduct,onDelete:deleteProduct}),
+        page==='export'&&React.createElement(ExportPage,{products}),
+        page==='upload'&&(role==='admin'
+          ?React.createElement(UploadPage,{products,aliases,onApprove,apiKey,onSetApiKey:setApiKey})
+          :React.createElement('div',{className:'empty'},'Admin access only')),
+        page==='aliases'&&(role==='admin'
+          ?React.createElement(AliasesPage,{aliases,products,onSave:saveAlias,onDelete:deleteAlias})
+          :React.createElement('div',{className:'empty'},'Admin access only'))
+      )
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>
