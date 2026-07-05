@@ -776,6 +776,8 @@ function UploadPage({products,aliases,onApprove,apiKey,onSetApiKey}){
   const[proposals,setProposals]=useState([]);
   const[checked,setChecked]=useState({});
   const[keyInput,setKeyInput]=useState(apiKey||'');
+  const[editIdx,setEditIdx]=useState(null);
+  const[editVal,setEditVal]=useState('');
   const fileRef=useRef();
 
   function resolveSupplier(sn){
@@ -867,11 +869,44 @@ function UploadPage({products,aliases,onApprove,apiKey,onSetApiKey}){
           const old=p.product?p.product.costPerUnit:null;
           const diff=old!==null?p.newCost-old:null;
           const dir=diff===null?null:diff>0?'up':diff<0?'down':'same';
-          return React.createElement('div',{key:i,className:'proposal-item',style:{opacity:p.matched?1:.5}},
+          return React.createElement('div',{key:i,className:'proposal-item',style:{opacity:p.matched?1:.7}},
             React.createElement('input',{type:'checkbox',checked:!!checked[i],onChange:e=>setChecked(c=>({...c,[i]:e.target.checked})),disabled:!p.matched,style:{accentColor:'var(--blue)',width:16,height:16}}),
             React.createElement('div',{className:'proposal-name'},
-              p.internalName?React.createElement('span',{className:'tag tag-green',style:{marginRight:6}},p.internalName):React.createElement('span',{className:'tag tag-red',style:{marginRight:6}},'Unmatched'),
-              React.createElement('span',{style:{fontSize:11,color:'var(--text2)'}},p.supplierName)
+              editIdx===i
+                ?React.createElement('div',{style:{position:'relative',flex:1,minWidth:160}},
+                    React.createElement('input',{
+                      className:'input input-sm',autoFocus:true,value:editVal,
+                      placeholder:'Type to search SKU...',
+                      style:{width:'100%'},
+                      onChange:e=>setEditVal(e.target.value),
+                      onKeyDown:e=>{if(e.key==='Escape'){setEditIdx(null);setEditVal('');}}
+                    }),
+                    React.createElement('div',{style:{position:'absolute',top:'100%',left:0,right:0,background:'var(--bg2)',border:'1px solid var(--border2)',borderRadius:'var(--radius)',zIndex:50,maxHeight:160,overflowY:'auto',marginTop:2,boxShadow:'0 4px 12px rgba(0,0,0,.4)'}},
+                      products.filter(pr=>!editVal||pr.name.toLowerCase().includes(editVal.toLowerCase())).map(pr=>
+                        React.createElement('div',{
+                          key:pr.id,
+                          style:{padding:'8px 12px',cursor:'pointer',fontSize:12,borderBottom:'1px solid var(--border)'},
+                          onMouseDown:e=>{
+                            e.preventDefault();
+                            const upd=[...proposals];
+                            upd[i]={...upd[i],internalName:pr.name,product:pr,matched:true};
+                            setProposals(upd);
+                            setChecked(c=>({...c,[i]:true}));
+                            setEditIdx(null);setEditVal('');
+                          },
+                          onMouseEnter:e=>e.currentTarget.style.background='var(--bg3)',
+                          onMouseLeave:e=>e.currentTarget.style.background=''
+                        },pr.name)
+                      )
+                    )
+                  )
+                :React.createElement('span',{
+                    className:'tag '+(p.internalName?'tag-green':'tag-red'),
+                    style:{marginRight:6,cursor:'pointer'},
+                    title:'Click to change match',
+                    onClick:()=>{setEditIdx(i);setEditVal(p.internalName||'');}
+                  },p.internalName||(React.createElement('span',null,'✏️ Unmatched — tap to fix'))),
+              editIdx!==i&&React.createElement('span',{style:{fontSize:11,color:'var(--text2)'}},p.supplierName)
             ),
             old!==null&&React.createElement('span',{className:'proposal-from'},fmtRM(old)),
             old!==null&&React.createElement('span',{style:{color:'var(--text2)'}},'→'),
