@@ -180,6 +180,11 @@ const calcCostKg=(cost,qty)=>qty>0?cost/qty:0;
 const calcSugg=(costKg,mk)=>costKg*(1+mk/100);
 const fmtRM=v=>'RM '+parseFloat(v||0).toFixed(2);
 const fmtN=v=>parseFloat(v||0).toFixed(2);
+const businessDay=iso=>{
+  const d=new Date(iso);
+  if(d.getHours()>=17){const n=new Date(d);n.setDate(n.getDate()+1);return n.toDateString();}
+  return d.toDateString();
+};
 const fmtTime=iso=>{
   if(!iso)return'–';
   const d=new Date(iso),now=new Date(),diff=Math.floor((now-d)/60000);
@@ -237,7 +242,7 @@ function LoginScreen({onLogin}){
 // ── DASHBOARD ─────────────────────────────────────────────────
 function Dashboard({products}){
   const todayStr=new Date().toDateString();
-  const todayUp=products.filter(p=>new Date(p.lastUpdated).toDateString()===todayStr);
+  const todayUp=products.filter(p=>businessDay(p.lastUpdated)===todayStr);
   const ups=products.filter(p=>p.change==='up').length;
   const dns=products.filter(p=>p.change==='down').length;
   const sorted=[...products].sort((a,b)=>new Date(b.lastUpdated)-new Date(a.lastUpdated));
@@ -347,7 +352,7 @@ function PriceBoard({products,role,onSave}){
     if(q&&!p.name.toLowerCase().includes(q.toLowerCase()))return false;
     if(f==='up'&&p.change!=='up')return false;
     if(f==='down'&&p.change!=='down')return false;
-    if(f==='today'&&new Date(p.lastUpdated).toDateString()!==todayStr)return false;
+    if(f==='today'&&businessDay(p.lastUpdated)!==todayStr)return false;
     return true;
   });
   return React.createElement('div',null,
