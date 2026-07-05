@@ -948,6 +948,190 @@ function UploadPage({products,aliases,onApprove,apiKey,onSetApiKey}){
   );
 }
 
+// ── ORDERS PAGE ────────────────────────────────────────────────
+function OrdersPage({orders,contacts,onSaveOrder,onDeleteOrder,onSaveContact,products}){
+  const[editingId,setEditingId]=useState(null);
+  const[editData,setEditData]=useState(null);
+  const[showAddItem,setShowAddItem]=useState(false);
+  const[newItem,setNewItem]=useState({product:'',qty:1,supplier:''});
+  const[showWhatsApp,setShowWhatsApp]=useState(null);
+  const[selectedContact,setSelectedContact]=useState('');
+  const[contactName,setContactName]=useState('');
+  const[contactNumber,setContactNumber]=useState('');
+  const[showAddContact,setShowAddContact]=useState(false);
+
+  function startEdit(order){
+    setEditingId(order.id);
+    setEditData({...order});
+    setShowAddItem(false);
+  }
+
+  function saveOrder(){
+    onSaveOrder(editData);
+    setEditingId(null);
+    setEditData(null);
+  }
+
+  function removeItem(idx){
+    const upd={...editData};
+    upd.items=upd.items.filter((,i)=>i!==idx);
+    setEditData(upd);
+  }
+
+  function addItem(){
+    if(!newItem.product.trim()){alert('Select a product');return;}
+    const upd={...editData};
+    upd.items.push({...newItem});
+    setEditData(upd);
+    setNewItem({product:'',qty:1,supplier:''});
+    setShowAddItem(false);
+  }
+
+  function formatOrder(order){
+    const lines=order.items.map(it=>`• ${it.product} x${it.qty}${it.supplier?' ('+it.supplier+')':''}`)
+    return `*Order from FreshBoard*\n${lines.join('\n')}\n\n_Created: ${new Date(order.createdAt).toLocaleDateString()}_`;
+  }
+
+  function sendToWhatsApp(order){
+    const msg=formatOrder(order);
+    if(!selectedContact){alert('Select a contact');return;}
+    const contact=contacts.find(c=>c.id===selectedContact);
+    if(!contact){alert('Contact not found');return;}
+    const wa=`https://wa.me/${contact.number.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`;
+    window.open(wa);
+    setShowWhatsApp(null);
+    setSelectedContact('');
+  }
+
+  function addContact(){
+    if(!contactName.trim()||!contactNumber.trim()){alert('Fill all fields');return;}
+    onSaveContact({id:Date.now().toString(),name:contactName,number:contactNumber});
+    setContactName('');
+    setContactNumber('');
+    setShowAddContact(false);
+  }
+
+  function createNewOrder(){
+    const id=Date.now().toString();
+    const newOrder={id,items:[],createdAt:new Date().toISOString(),createdBy:'Admin'};
+    onSaveOrder(newOrder);
+    startEdit(newOrder);
+  }
+
+  return React.createElement('div',null,
+    React.createElement('div',{style:{marginBottom:16}},
+      React.createElement('button',{className:'btn btn-primary',onClick:createNewOrder},React.createElement('i',{className:'ti ti-plus'}),' New Order')
+    ),
+    orders.length===0&&React.createElement('div',{style:{padding:20,textAlign:'center',color:'var(--text2)'}},React.createElement('i',{className:'ti ti-inbox',style:{fontSize:32,marginBottom:8,display:'block'}}),'No orders yet'),
+    orders.map(order=>
+      !editingId||editingId!==order.id?
+        React.createElement('div',{key:order.id,className:'card',style:{marginBottom:12,display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12}},
+          React.createElement('div',{style:{flex:1}},
+            React.createElement('div',{style:{fontWeight:600,marginBottom:6}},`Order #${order.id.slice(-6)}`),
+            React.createElement('div',{style:{fontSize:12,color:'var(--text2)',marginBottom:6}},[
+              `Created: ${new Date(order.createdAt).toLocaleString()}`,
+              `Items: ${order.items.length}`,
+              order.items.length>0&&order.items.map(it=>it.product).join(', ')
+            ].filter(Boolean).join(' • ')}),
+            order.items.length>0&&React.createElement('div',{style:{fontSize:12,color:'var(--text3)',marginTop:6,padding:'8px 0',borderTop:'1px solid var(--border)'}},
+              order.items.map((it,i)=>
+                React.createElement('div',{key:i,style:{padding:'4px 0'}},`${it.product} x${it.qty}${it.supplier?' ('+it.supplier+')':''}`)
+              )
+            )
+          ),
+          React.createElement('div',{style:{display:'flex',gap:6,flexShrink:0}},
+            React.createElement('button',{className:'btn btn-sm',onClick:()=>startEdit(order)},React.createElement('i',{className:'ti ti-edit'})),
+            React.createElement('button',{className:'btn btn-sm btn-purple',onClick:()=>setShowWhatsApp(order.id)},React.createElement('i',{className:'ti ti-brand-whatsapp'})),
+            React.createElement('button',{className:'btn btn-sm btn-danger',onClick:()=>{if(confirm('Delete order?'))onDeleteOrder(order.id);}},React.createElement('i',{className:'ti ti-trash'}))
+          )
+        )
+      :null
+    ),
+    editingId&&editData&&React.createElement('div',{className:'modal-bg',onClick:()=>setEditingId(null)},
+      React.createElement('div',{className:'modal',onClick:e=>e.stopPropagation()},
+        React.createElement('div',{className:'modal-title'},
+          `Edit Order #${editData.id.slice(-6)}`,
+          React.createElement('button',{style:{background:'none',border:'none',color:'var(--text2)',cursor:'pointer',fontSize:20},onClick:()=>setEditingId(null)},'✕')
+        ),
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label'},'Items in Order'),
+          editData.items.length===0&&React.createElement('div',{style:{fontSize:12,color:'var(--text2)',padding:'12px',background:'var(--bg3)',borderRadius:'var(--radius)',marginBottom:12}},'No items yet. Add one below.'),
+          editData.items.map((it,i)=>
+            React.createElement('div',{key:i,style:{display:'flex',alignItems:'center',gap:8,padding:'8px 0',borderBottom:'1px solid var(--border)'}},
+              React.createElement('div',{style:{flex:1,fontSize:13}},`${it.product} x${it.qty}${it.supplier?' · '+it.supplier:''}`),
+              React.createElement('button',{className:'btn btn-sm btn-danger',onClick:()=>removeItem(i)},React.createElement('i',{className:'ti ti-x'}))
+            )
+          )
+        ),
+        !showAddItem&&React.createElement('button',{className:'btn btn-primary',onClick:()=>setShowAddItem(true),style:{marginBottom:16}},React.createElement('i',{className:'ti ti-plus'}),' Add Item'),
+        showAddItem&&React.createElement('div',{style:{background:'var(--bg3)',padding:12,borderRadius:'var(--radius)',marginBottom:16}},
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',{className:'form-label'},'Product'),
+            React.createElement('select',{className:'select',value:newItem.product,onChange:e=>setNewItem({...newItem,product:e.target.value})},
+              React.createElement('option',null,'— Select —'),
+              products.map(p=>React.createElement('option',{key:p.id,value:p.name},p.name))
+            )
+          ),
+          React.createElement('div',{className:'form-row'},
+            React.createElement('div',{className:'form-group'},
+              React.createElement('label',{className:'form-label'},'Qty'),
+              React.createElement('input',{className:'input input-sm',type:'number',min:1,value:newItem.qty,onChange:e=>setNewItem({...newItem,qty:parseInt(e.target.value)||1})})
+            ),
+            React.createElement('div',{className:'form-group'},
+              React.createElement('label',{className:'form-label'},'Supplier'),
+              React.createElement('input',{className:'input input-sm',placeholder:'e.g. Lucky, Pasar',value:newItem.supplier,onChange:e=>setNewItem({...newItem,supplier:e.target.value})})
+            )
+          ),
+          React.createElement('div',{style:{display:'flex',gap:8}},
+            React.createElement('button',{className:'btn btn-success btn-sm',onClick:addItem},'Add'),
+            React.createElement('button',{className:'btn btn-sm',onClick:()=>setShowAddItem(false)},'Cancel')
+          )
+        ),
+        React.createElement('div',{style:{display:'flex',gap:8,marginTop:16}},
+          React.createElement('button',{className:'btn btn-primary',onClick:saveOrder},React.createElement('i',{className:'ti ti-check'}),' Save Order'),
+          React.createElement('button',{className:'btn',onClick:()=>setEditingId(null)},'Cancel')
+        )
+      )
+    ),
+    showWhatsApp&&React.createElement('div',{className:'modal-bg',onClick:()=>setShowWhatsApp(null)},
+      React.createElement('div',{className:'modal',onClick:e=>e.stopPropagation()},
+        React.createElement('div',{className:'modal-title'},
+          'Send to WhatsApp',
+          React.createElement('button',{style:{background:'none',border:'none',color:'var(--text2)',cursor:'pointer',fontSize:20},onClick:()=>setShowWhatsApp(null)},'✕')
+        ),
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label'},'Select Contact or Group'),
+          React.createElement('select',{className:'select',value:selectedContact,onChange:e=>setSelectedContact(e.target.value)},
+            React.createElement('option',null,'— Choose contact —'),
+            contacts.map(c=>React.createElement('option',{key:c.id,value:c.id},`${c.name} (${c.number})`))
+          )
+        ),
+        contacts.length===0&&React.createElement('div',{style:{fontSize:12,color:'var(--text2)',marginBottom:12,padding:'8px',background:'var(--bg3)',borderRadius:'var(--radius)'}},React.createElement('i',{className:'ti ti-alert-triangle'}),' No contacts. Add one below.'),
+        React.createElement('button',{className:'btn btn-primary btn-sm',onClick:()=>setShowAddContact(!showAddContact),style:{marginBottom:12}},showAddContact?'Hide':'+ Add New Contact'),
+        showAddContact&&React.createElement('div',{style:{background:'var(--bg3)',padding:12,borderRadius:'var(--radius)',marginBottom:12}},
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',{className:'form-label'},'Contact Name'),
+            React.createElement('input',{className:'input input-sm',placeholder:'e.g. Lucky Supplier',value:contactName,onChange:e=>setContactName(e.target.value)})
+          ),
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',{className:'form-label'},'Phone Number'),
+            React.createElement('input',{className:'input input-sm',placeholder:'e.g. +6281234567890',value:contactNumber,onChange:e=>setContactNumber(e.target.value)})
+          ),
+          React.createElement('button',{className:'btn btn-success btn-sm',onClick:addContact},'Add Contact')
+        ),
+        React.createElement('div',{style:{background:'var(--bg3)',padding:12,borderRadius:'var(--radius)',marginBottom:16,fontSize:12,color:'var(--text2)'}},
+          React.createElement('div',{style:{fontWeight:600,marginBottom:8}},'Message Preview:'),
+          React.createElement('div',{style:{fontFamily:'var(--mono)',whiteSpace:'pre-wrap',lineHeight:1.6}},formatOrder(orders.find(o=>o.id===showWhatsApp)))
+        ),
+        React.createElement('div',{style:{display:'flex',gap:8}},
+          React.createElement('button',{className:'btn btn-primary',onClick:()=>sendToWhatsApp(orders.find(o=>o.id===showWhatsApp))},React.createElement('i',{className:'ti ti-send'}),' Send'),
+          React.createElement('button',{className:'btn',onClick:()=>setShowWhatsApp(null)},'Cancel')
+        )
+      )
+    )
+  );
+}
+
 // ── MAIN APP ──────────────────────────────────────────────────
 function App(){
   const[role,setRole]=useState(null);
@@ -956,15 +1140,22 @@ function App(){
   const[products,setProducts]=useState(()=>load('fb_products',INITIAL_PRODUCTS));
   const[aliases,setAliases]=useState(()=>load('fb_aliases',INITIAL_ALIASES));
   const[apiKey,setApiKeyState]=useState(()=>localStorage.getItem(API_KEY_STORAGE)||'');
+  const[orders,setOrders]=useState(()=>load('fb_orders',[]));
+  const[contacts,setContacts]=useState(()=>load('fb_contacts',[]));
 
   useEffect(()=>store('fb_products',products),[products]);
   useEffect(()=>store('fb_aliases',aliases),[aliases]);
+  useEffect(()=>store('fb_orders',orders),[orders]);
+  useEffect(()=>store('fb_contacts',contacts),[contacts]);
 
   function setApiKey(k){setApiKeyState(k);localStorage.setItem(API_KEY_STORAGE,k);}
   function saveProduct(p){setProducts(ps=>{const i=ps.findIndex(x=>x.id===p.id);if(i>=0){const n=[...ps];n[i]=p;return n;}return[...ps,p];});}
   function deleteProduct(id){setProducts(ps=>ps.filter(p=>p.id!==id));}
   function saveAlias(a){setAliases(as=>{const i=as.findIndex(x=>x.id===a.id);if(i>=0){const n=[...as];n[i]=a;return n;}return[...as,a];});}
   function deleteAlias(id){setAliases(as=>as.filter(a=>a.id!==id));}
+  function saveOrder(o){setOrders(os=>{const i=os.findIndex(x=>x.id===o.id);if(i>=0){const n=[...os];n[i]=o;return n;}return[...os,o];});}
+  function deleteOrder(id){setOrders(os=>os.filter(o=>o.id!==id));}
+  function saveContact(c){setContacts(cs=>{const i=cs.findIndex(x=>x.id===c.id);if(i>=0){const n=[...cs];n[i]=c;return n;}return[...cs,c];});}
   function onApprove(proposals){
     setProducts(ps=>{
       const upd=[...ps];
@@ -989,6 +1180,7 @@ function App(){
     {id:'dashboard',icon:'ti-layout-dashboard',label:'Dashboard'},
     {id:'prices',icon:'ti-tag',label:'Price Board'},
     {id:'products',icon:'ti-package',label:'Products'},
+    {id:'orders',icon:'ti-brand-whatsapp',label:'Orders'},
     {id:'export',icon:'ti-send',label:'Send Price List'},
     {id:'upload',icon:'ti-cloud-upload',label:'Upload'},
     {id:'aliases',icon:'ti-arrows-exchange',label:'Name Mapping'},
@@ -999,7 +1191,7 @@ function App(){
     {id:'export',icon:'ti-send',label:'Send Price List'},
   ];
   const navItems=role==='admin'?adminNav:staffNav;
-  const titles={dashboard:'Dashboard',prices:'Price Board',products:'Product Database',export:'Send Price List',upload:'Upload Price List',aliases:'Supplier Name Mapping'};
+  const titles={dashboard:'Dashboard',prices:'Price Board',products:'Product Database',orders:'WhatsApp Orders',export:'Send Price List',upload:'Upload Price List',aliases:'Supplier Name Mapping'};
 
   function navTo(id){setPage(id);setSidebarOpen(false);}
 
@@ -1031,6 +1223,9 @@ function App(){
         page==='dashboard'&&React.createElement(Dashboard,{products}),
         page==='prices'&&React.createElement(PriceBoard,{products,role,onSave:saveProduct}),
         page==='products'&&React.createElement(ProductsPage,{products,role,onSave:saveProduct,onDelete:deleteProduct}),
+        page==='orders'&&(role==='admin'
+          ?React.createElement(OrdersPage,{orders,contacts,onSaveOrder:saveOrder,onDeleteOrder:deleteOrder,onSaveContact:saveContact,products})
+          :React.createElement('div',{className:'empty'},'Admin access only')),
         page==='export'&&React.createElement(ExportPage,{products}),
         page==='upload'&&(role==='admin'
           ?React.createElement(UploadPage,{products,aliases,onApprove,apiKey,onSetApiKey:setApiKey})
