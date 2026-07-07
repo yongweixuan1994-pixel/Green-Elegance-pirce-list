@@ -949,6 +949,200 @@ function UploadPage({products,aliases,onApprove,apiKey,onSetApiKey}){
 }
 
 // ── ORDERS PAGE ────────────────────────────────────────────────
+// ── STAFF ORDERS PAGE (Staff submits, Admin views/edits) ──
+function StaffOrdersPage({role,staffOrders,onSaveStaffOrder,onDeleteStaffOrder,products}){
+  const[items,setItems]=useState([]);
+  const[showAddItem,setShowAddItem]=useState(false);
+  const[selectedProduct,setSelectedProduct]=useState('');
+  const[selectedSupplier,setSelectedSupplier]=useState('');
+  const[qty,setQty]=useState(1);
+  const[editingId,setEditingId]=useState(null);
+  const[editingOrder,setEditingOrder]=useState(null);
+  const[editingItems,setEditingItems]=useState([]);
+
+  function addItem(){
+    if(!selectedProduct||!selectedSupplier){alert('Select product and supplier');return;}
+    setItems([...items,{id:Date.now().toString(),product:selectedProduct,supplier:selectedSupplier,qty}]);
+    setSelectedProduct('');setSelectedSupplier('');setQty(1);setShowAddItem(false);
+  }
+
+  function removeItem(id){setItems(items.filter(i=>i.id!==id));}
+
+  function submitOrder(){
+    if(items.length===0){alert('Add items first');return;}
+    const order={id:Date.now().toString(),items,createdAt:new Date().toISOString(),createdBy:role};
+    onSaveStaffOrder(order);
+    setItems([]);
+    alert('Order submitted!');
+  }
+
+  function startEditOrder(order){
+    setEditingId(order.id);
+    setEditingOrder({...order});
+    setEditingItems([...order.items]);
+  }
+
+  function saveEditedOrder(){
+    const upd={...editingOrder,items:editingItems};
+    onSaveStaffOrder(upd);
+    setEditingId(null);
+    setEditingOrder(null);
+  }
+
+  function removeEditItem(id){
+    setEditingItems(editingItems.filter(i=>i.id!==id));
+  }
+
+  if(role==='staff'){
+    return React.createElement('div',null,
+      React.createElement('div',{className:'card',style:{marginBottom:16}},
+        React.createElement('div',{className:'section-title'},'Add Items to Order'),
+        React.createElement('div',{className:'form-row'},
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',{className:'form-label'},'Product'),
+            React.createElement('select',{className:'select',value:selectedProduct,onChange:e=>setSelectedProduct(e.target.value)},
+              React.createElement('option',null,'— Select —'),
+              products.map(p=>React.createElement('option',{key:p.id,value:p.name},p.name))
+            )
+          ),
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',{className:'form-label'},'Supplier'),
+            React.createElement('input',{className:'input input-sm',placeholder:'e.g. Cameron, Lucky, Pasar',value:selectedSupplier,onChange:e=>setSelectedSupplier(e.target.value)})
+          ),
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',{className:'form-label'},'Qty'),
+            React.createElement('input',{className:'input input-sm',type:'number',min:1,value:qty,onChange:e=>setQty(parseInt(e.target.value)||1)})
+          )
+        ),
+        React.createElement('button',{className:'btn btn-primary',onClick:addItem},'+ Add Item')
+      ),
+      React.createElement('div',{style:{marginBottom:16}},
+        items.length===0&&React.createElement('div',{style:{color:'var(--text2)',fontSize:13,padding:12,background:'var(--bg3)',borderRadius:'var(--radius)'}},'No items yet'),
+        items.map(it=>React.createElement('div',{key:it.id,className:'card',style:{marginBottom:8,display:'flex',justifyContent:'space-between',alignItems:'center'}},
+          React.createElement('div',{style:{fontSize:13}},[it.product,`x${it.qty}`,`(${it.supplier})`].join(' · ')),
+          React.createElement('button',{className:'btn btn-sm btn-danger',onClick:()=>removeItem(it.id)},'Delete')
+        )),
+        items.length>0&&React.createElement('button',{className:'btn btn-success',onClick:submitOrder,style:{marginTop:12,width:'100%'}},'✓ Submit Order')
+      )
+    );
+  }
+
+  return React.createElement('div',null,
+    React.createElement('div',{style:{marginBottom:16}},
+      React.createElement('div',{style:{fontSize:12,color:'var(--text2)',marginBottom:12}},`${staffOrders.length} submitted order${staffOrders.length!==1?'s':''}`),
+      staffOrders.length===0&&React.createElement('div',{style:{color:'var(--text2)',fontSize:13,padding:20,background:'var(--bg3)',borderRadius:'var(--radius)',textAlign:'center'}},'No orders submitted yet')
+    ),
+    staffOrders.map(order=>
+      editingId===order.id?
+        React.createElement('div',{className:'card',style:{marginBottom:12}},
+          React.createElement('div',{className:'section-title'},'Edit Order'),
+          editingItems.map((it,i)=>React.createElement('div',{key:i,style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:'1px solid var(--border)'}},
+            React.createElement('div',{style:{fontSize:13}},[it.product,`x${it.qty}`,`(${it.supplier})`].join(' · ')),
+            React.createElement('button',{className:'btn btn-sm btn-danger',onClick:()=>removeEditItem(it.id)},'Delete')
+          )),
+          React.createElement('div',{style:{display:'flex',gap:8,marginTop:16}},
+            React.createElement('button',{className:'btn btn-primary',onClick:saveEditedOrder},'Save'),
+            React.createElement('button',{className:'btn',onClick:()=>setEditingId(null)},'Cancel')
+          )
+        )
+      :
+        React.createElement('div',{className:'card',style:{marginBottom:12}},
+          React.createElement('div',{style:{fontWeight:600,marginBottom:8}},[`Order #${order.id.slice(-6)}`,`${new Date(order.createdAt).toLocaleDateString()}`,`By ${order.createdBy}`].join(' · ')),
+          React.createElement('div',{style:{fontSize:12,color:'var(--text2)',marginBottom:12}},order.items.map(it=>`${it.product} x${it.qty} (${it.supplier})`).join(', ')),
+          React.createElement('div',{style:{display:'flex',gap:8}},
+            React.createElement('button',{className:'btn btn-sm',onClick:()=>startEditOrder(order)},'Edit'),
+            React.createElement('button',{className:'btn btn-sm btn-danger',onClick:()=>{if(confirm('Delete?'))onDeleteStaffOrder(order.id);}},React.createElement('i',{className:'ti ti-trash'}))
+          )
+        )
+    )
+  );
+}
+
+function AdminStaffOrdersPage({staffOrders,onDeleteStaffOrder,products,contacts}){
+  const[selectedOrderId,setSelectedOrderId]=useState(null);
+  const[editText,setEditText]=useState('');
+  const[showSendModal,setShowSendModal]=useState(null);
+  const[selectedContact,setSelectedContact]=useState('');
+
+  function getItemsBySupplier(items){
+    const groups={};
+    items.forEach(it=>{
+      if(!groups[it.supplier])groups[it.supplier]=[];
+      groups[it.supplier].push(it);
+    });
+    return groups;
+  }
+
+  function formatSupplierMessage(supplierName,items){
+    const lines=items.map(it=>`• ${it.product} x${it.qty}`);
+    return `*Order for ${supplierName}*\n${lines.join('\n')}`;
+  }
+
+  function sendToWhatsApp(supplierName,items){
+    if(!selectedContact){alert('Select contact');return;}
+    const contact=contacts.find(c=>c.id===selectedContact);
+    if(!contact){alert('Contact not found');return;}
+    const msg=editText||formatSupplierMessage(supplierName,items);
+    const wa=`https://wa.me/${contact.number.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`;
+    window.open(wa);
+    setShowSendModal(null);
+    setSelectedContact('');
+  }
+
+  const order=selectedOrderId?staffOrders.find(o=>o.id===selectedOrderId):null;
+  const suppliers=order?getItemsBySupplier(order.items):{};
+
+  return React.createElement('div',null,
+    !selectedOrderId?
+      React.createElement('div',null,
+        React.createElement('div',{style:{marginBottom:16}},
+          staffOrders.length===0&&React.createElement('div',{style:{color:'var(--text2)',fontSize:13,padding:20,background:'var(--bg3)',borderRadius:'var(--radius)',textAlign:'center'}},'No orders to process'),
+          staffOrders.map(o=>React.createElement('div',{key:o.id,className:'card',style:{marginBottom:12,cursor:'pointer',border:'2px solid var(--border)'},onClick:()=>setSelectedOrderId(o.id)},
+            React.createElement('div',{style:{fontWeight:600,marginBottom:8}},[`Order #${o.id.slice(-6)}`,new Date(o.createdAt).toLocaleString(),`${o.items.length} items`].join(' · ')),
+            React.createElement('div',{style:{fontSize:12,color:'var(--text2)'}},o.items.map(it=>`${it.supplier}: ${it.product} x${it.qty}`).join(' | '))
+          ))
+        )
+      )
+    :
+      React.createElement('div',null,
+        React.createElement('button',{className:'btn',onClick:()=>setSelectedOrderId(null),style:{marginBottom:16}},'← Back'),
+        React.createElement('div',{style:{marginBottom:16}},
+          React.createElement('div',{className:'section-title'},`Order #${order.id.slice(-6)} - Supplier Breakdown`)
+        ),
+        Object.entries(suppliers).map(([supplier,items])=>React.createElement('div',{key:supplier,className:'card',style:{marginBottom:12,padding:16,background:'var(--bg3)'}},
+          React.createElement('div',{style:{fontWeight:600,marginBottom:12,fontSize:14}},supplier),
+          items.map((it,i)=>React.createElement('div',{key:i,style:{fontSize:13,padding:'6px 0',borderBottom:'1px solid var(--border)'}},`• ${it.product} x${it.qty}`)),
+          React.createElement('button',{className:'btn btn-primary btn-sm',onClick:()=>{setShowSendModal(supplier);setEditText(formatSupplierMessage(supplier,items));},style:{marginTop:12,width:'100%'}},'Send to WhatsApp')
+        )),
+        React.createElement('button',{className:'btn btn-danger',onClick:()=>{if(confirm('Delete order?'))onDeleteStaffOrder(order.id);setSelectedOrderId(null);},style:{marginTop:16,width:'100%'}},'Delete Order')
+      ),
+    showSendModal&&React.createElement('div',{className:'modal-bg',onClick:()=>setShowSendModal(null)},
+      React.createElement('div',{className:'modal',onClick:e=>e.stopPropagation()},
+        React.createElement('div',{className:'modal-title'},`Send ${showSendModal} to WhatsApp`,React.createElement('button',{style:{background:'none',border:'none',color:'var(--text2)',cursor:'pointer',fontSize:20},onClick:()=>setShowSendModal(null)},'✕')),
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label'},'Select Contact'),
+          React.createElement('select',{className:'select',value:selectedContact,onChange:e=>setSelectedContact(e.target.value)},
+            React.createElement('option',null,'— Choose —'),
+            contacts.map(c=>React.createElement('option',{key:c.id,value:c.id},`${c.name} (${c.number})`))
+          )
+        ),
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',{className:'form-label'},'Edit Message (optional)'),
+          React.createElement('textarea',{className:'input',style:{minHeight:100,fontFamily:'var(--mono)',fontSize:12},value:editText,onChange:e=>setEditText(e.target.value)})
+        ),
+        React.createElement('div',{style:{background:'var(--bg3)',padding:12,borderRadius:'var(--radius)',marginBottom:16,fontSize:12}},
+          React.createElement('div',{style:{fontWeight:600,marginBottom:8}},'Preview:'),
+          React.createElement('div',{style:{whiteSpace:'pre-wrap',lineHeight:1.6}},editText)
+        ),
+        React.createElement('div',{style:{display:'flex',gap:8}},
+          React.createElement('button',{className:'btn btn-primary',onClick:()=>sendToWhatsApp(showSendModal,suppliers[showSendModal])},'Send'),
+          React.createElement('button',{className:'btn',onClick:()=>setShowSendModal(null)},'Cancel')
+        )
+      )
+    )
+  );
+}
+
 function OrdersPage({orders,contacts,onSaveOrder,onDeleteOrder,onSaveContact,products}){
   const[editingId,setEditingId]=useState(null);
   const[editData,setEditData]=useState(null);
@@ -1142,11 +1336,13 @@ function App(){
   const[apiKey,setApiKeyState]=useState(()=>localStorage.getItem(API_KEY_STORAGE)||'');
   const[orders,setOrders]=useState(()=>load('fb_orders',[]));
   const[contacts,setContacts]=useState(()=>load('fb_contacts',[]));
+  const[staffOrders,setStaffOrders]=useState(()=>load('fb_staff_orders',[]));
 
   useEffect(()=>store('fb_products',products),[products]);
   useEffect(()=>store('fb_aliases',aliases),[aliases]);
   useEffect(()=>store('fb_orders',orders),[orders]);
   useEffect(()=>store('fb_contacts',contacts),[contacts]);
+  useEffect(()=>store('fb_staff_orders',staffOrders),[staffOrders]);
 
   function setApiKey(k){setApiKeyState(k);localStorage.setItem(API_KEY_STORAGE,k);}
   function saveProduct(p){setProducts(ps=>{const i=ps.findIndex(x=>x.id===p.id);if(i>=0){const n=[...ps];n[i]=p;return n;}return[...ps,p];});}
@@ -1156,6 +1352,8 @@ function App(){
   function saveOrder(o){setOrders(os=>{const i=os.findIndex(x=>x.id===o.id);if(i>=0){const n=[...os];n[i]=o;return n;}return[...os,o];});}
   function deleteOrder(id){setOrders(os=>os.filter(o=>o.id!==id));}
   function saveContact(c){setContacts(cs=>{const i=cs.findIndex(x=>x.id===c.id);if(i>=0){const n=[...cs];n[i]=c;return n;}return[...cs,c];});}
+  function saveStaffOrder(o){setStaffOrders(os=>{const i=os.findIndex(x=>x.id===o.id);if(i>=0){const n=[...os];n[i]=o;return n;}return[...os,o];});}
+  function deleteStaffOrder(id){setStaffOrders(os=>os.filter(o=>o.id!==id));}
   function onApprove(proposals){
     setProducts(ps=>{
       const upd=[...ps];
@@ -1180,6 +1378,7 @@ function App(){
     {id:'dashboard',icon:'ti-layout-dashboard',label:'Dashboard'},
     {id:'prices',icon:'ti-tag',label:'Price Board'},
     {id:'products',icon:'ti-package',label:'Products'},
+    {id:'stafforders',icon:'ti-users',label:'Staff Orders'},
     {id:'orders',icon:'ti-brand-whatsapp',label:'Orders'},
     {id:'export',icon:'ti-send',label:'Send Price List'},
     {id:'upload',icon:'ti-cloud-upload',label:'Upload'},
@@ -1188,10 +1387,11 @@ function App(){
   const staffNav=[
     {id:'dashboard',icon:'ti-layout-dashboard',label:'Dashboard'},
     {id:'prices',icon:'ti-tag',label:'Price Board'},
+    {id:'stafforders',icon:'ti-plus',label:'Submit Order'},
     {id:'export',icon:'ti-send',label:'Send Price List'},
   ];
   const navItems=role==='admin'?adminNav:staffNav;
-  const titles={dashboard:'Dashboard',prices:'Price Board',products:'Product Database',orders:'WhatsApp Orders',export:'Send Price List',upload:'Upload Price List',aliases:'Supplier Name Mapping'};
+  const titles={dashboard:'Dashboard',prices:'Price Board',products:'Product Database',stafforders:'Staff Orders',orders:'WhatsApp Orders',export:'Send Price List',upload:'Upload Price List',aliases:'Supplier Name Mapping'};
 
   function navTo(id){setPage(id);setSidebarOpen(false);}
 
@@ -1223,6 +1423,9 @@ function App(){
         page==='dashboard'&&React.createElement(Dashboard,{products}),
         page==='prices'&&React.createElement(PriceBoard,{products,role,onSave:saveProduct}),
         page==='products'&&React.createElement(ProductsPage,{products,role,onSave:saveProduct,onDelete:deleteProduct}),
+        page==='stafforders'&&(role==='admin'
+          ?React.createElement(AdminStaffOrdersPage,{staffOrders,onDeleteStaffOrder:deleteStaffOrder,products,contacts})
+          :React.createElement(StaffOrdersPage,{role,staffOrders,onSaveStaffOrder:saveStaffOrder,onDeleteStaffOrder:deleteStaffOrder,products})),
         page==='orders'&&(role==='admin'
           ?React.createElement(OrdersPage,{orders,contacts,onSaveOrder:saveOrder,onDeleteOrder:deleteOrder,onSaveContact:saveContact,products})
           :React.createElement('div',{className:'empty'},'Admin access only')),
